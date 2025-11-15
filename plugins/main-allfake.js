@@ -62,9 +62,9 @@ global.fake = { contextInfo: { isForwarded: true, forwardedNewsletterMessageInfo
 }}, { quoted: m }
 
 global.icono = [ 
-"https://stellarwa.xyz/files/1752426834891.jpg",
-"https://stellarwa.xyz/files/1752426824621.jpg",
-"https://stellarwa.xyz/files/1752426820436.jpg"
+"https://files-furina.stellarwa.xyz/1763136621219.jpg",
+"https://files-furina.stellarwa.xyz/1763136621896.jpg",
+"https://files-furina.stellarwa.xyz/1763136622229.jpg"
 ].getRandom()
 
 global.rcanal = {contextInfo: {forwardingScore: 2025, isForwarded: true, externalAdReply: {title: textbot, body: wm, sourceUrl: redes, thumbnailUrl: icono}}}
