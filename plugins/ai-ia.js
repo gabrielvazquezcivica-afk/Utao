@@ -41,6 +41,5 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
 handler.help = ['ia <texto>', 'megumin <texto>', 'chatgpt <texto>']
 handler.tags = ['ai']
 handler.command = ['ia', 'chatgpt', 'hutao']
-handler.register = true
 
 export default handler
