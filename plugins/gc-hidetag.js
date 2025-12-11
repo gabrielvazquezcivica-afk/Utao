@@ -1,53 +1,83 @@
-import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
-import * as fs from 'fs'
+const handler = async (m, { conn, text, participants }) => {
 
-var handler = async (m, { conn, text, participants, isOwner, isAdmin }) => {
+  // Reacción 🚨
+  await conn.sendMessage(m.chat, { react: { text: "🚨", key: m.key } });
 
-if (!m.quoted && !text) return conn.reply(m.chat, `🚩 Ingrese un texto`, m, rcanal)
+  const users = participants.map(u => u.id);
 
-try { 
+  // Si no hay texto y no se respondió a nada
+  if (!text && !m.quoted) {
+    return conn.reply(m.chat, '*⚠️ Debes escribir un mensaje o responder a uno para usar este comando.*', m);
+  }
 
-let users = participants.map(u => conn.decodeJid(u.id))
-let q = m.quoted ? m.quoted : m || m.text || m.sender
-let c = m.quoted ? await m.getQuotedObj() : m.msg || m.text || m.sender
-let msg = conn.cMod(m.chat, generateWAMessageFromContent(m.chat, { [m.quoted ? q.mtype : 'extendedTextMessage']: m.quoted ? c.message[q.mtype] : { text: '' || c }}, { quoted: null, userJid: conn.user.id }), text || q.text, conn.user.jid, { mentions: users })
-await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+  // Si hay texto y NO es respuesta a un mensaje → envía texto con hidetag
+  if (text && !m.quoted) {
+    return conn.sendMessage(
+      m.chat,
+      { text, mentions: users },
+      { quoted: m }
+    );
+  }
 
-} catch {  
+  // Si SÍ está respondiendo a un mensaje
+  if (m.quoted) {
+    const q = m.quoted;
+    const mime = q.mtype;
 
-/**
-[ By @NeKosmic || https://github.com/NeKosmic/ ]
-**/  
+    // Reenviar exactamente el contenido del mensaje citado
+    let msg = {};
 
-let users = participants.map(u => conn.decodeJid(u.id))
-let quoted = m.quoted ? m.quoted : m
-let mime = (quoted.msg || quoted).mimetype || ''
-let isMedia = /image|video|sticker|audio/.test(mime)
-let more = String.fromCharCode(8206)
-let masss = more.repeat(850)
-let htextos = `${text ? text : "*Hola!!*"}`
-if ((isMedia && quoted.mtype === 'imageMessage') && htextos) {
-var mediax = await quoted.download?.()
-conn.sendMessage(m.chat, { image: mediax, mentions: users, caption: htextos, mentions: users }, { quoted: null })
-} else if ((isMedia && quoted.mtype === 'videoMessage') && htextos) {
-var mediax = await quoted.download?.()
-conn.sendMessage(m.chat, { video: mediax, mentions: users, mimetype: 'video/mp4', caption: htextos }, { quoted: null })
-} else if ((isMedia && quoted.mtype === 'audioMessage') && htextos) {
-var mediax = await quoted.download?.()
-conn.sendMessage(m.chat, { audio: mediax, mentions: users, mimetype: 'audio/mp4', fileName: `Hidetag.mp3` }, { quoted: null })
-} else if ((isMedia && quoted.mtype === 'stickerMessage') && htextos) {
-var mediax = await quoted.download?.()
-conn.sendMessage(m.chat, {sticker: mediax, mentions: users}, { quoted: null })
-} else {
-await conn.relayMessage(m.chat, {extendedTextMessage:{text: `${masss}\n${htextos}\n`, ...{ contextInfo: { mentionedJid: users, externalAdReply: { thumbnail: icons, sourceUrl: redes }}}}}, {})
-}}
+    switch (mime) {
 
-}
-handler.help = ['hidetag']
-handler.tags = ['grupo']
-handler.command = ['hidetag', 'notificar', 'notify']
+      case 'audioMessage':
+        msg = {
+          audio: await q.download(),
+          ptt: q.ptt || false,
+          mimetype: 'audio/mp4',
+          mentions: users
+        };
+        break;
 
-handler.group = true
-handler.admin = true
+      case 'imageMessage':
+        msg = {
+          image: await q.download(),
+          caption: q.text || text || '',
+          mentions: users
+        };
+        break;
 
-export default handler
+      case 'videoMessage':
+        msg = {
+          video: await q.download(),
+          caption: q.text || text || '',
+          mentions: users
+        };
+        break;
+
+      case 'stickerMessage':
+        msg = {
+          sticker: await q.download(),
+          mentions: users
+        };
+        break;
+
+      default:
+        msg = {
+          text: q.text || text || '',
+          mentions: users
+        };
+        break;
+    }
+
+    return conn.sendMessage(m.chat, msg, { quoted: m });
+  }
+
+};
+
+handler.help = ['hidetag'];
+handler.tags = ['group'];
+handler.command = /^(hidetag|ht|n)$/i;
+handler.group = true;
+handler.admin = true;
+
+export default handler;
