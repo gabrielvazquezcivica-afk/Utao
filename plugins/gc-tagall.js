@@ -8,7 +8,7 @@ const handler = async (m, { conn, participants, usedPrefix, command }) => {
 
   const getRandomEmoji = () => emojis[Math.floor(Math.random() * emojis.length)];
 
-  let message = `*👥 TAGALL* \n\nMensajes para todos:\n\n`;
+  let message = `*MENCIO GENERAL 🌟* \n\nMensajes para todos:\n\n`;
 
   for (let mem of participants) {
     const emoji = getRandomEmoji();
