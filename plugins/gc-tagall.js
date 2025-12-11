@@ -1,20 +1,27 @@
-const handler = async (m, {isOwner, isAdmin, conn, text, participants, args, command, usedPrefix}) => {
-  if (usedPrefix == 'a' || usedPrefix == 'A') return;
-  if (!(isAdmin || isOwner)) {
-    global.dfail('admin', m, conn);
-    return;
+const handler = async (m, { conn, participants, usedPrefix, command }) => {
+  const emojis = [
+    "🔥","💥","⚡","🌟","⭐","✨","💫","🌈","☀️","🌙","🍀","🍙","🍩","🍪",
+    "🎉","🎊","🎈","🎁","🏆","🎯","🚀","🛸","🐶","🐱","🐭","🐹","🐰","🦊",
+    "🐻","🐼","🐨","🐯","🦁","🐮","🐸","🐵","🦄","🐺","🐙","🐠","🐬","🐳",
+    "🌹","🌷","🌸","🌼","🌻","🍁","🍄","⚙️","🧩","🎮","🕹️","📱","💻","💡"
+  ];
+
+  const getRandomEmoji = () => emojis[Math.floor(Math.random() * emojis.length)];
+
+  let message = `*MENCION GENERAL 🌟* \n\nMensajes para todos:\n\n`;
+
+  for (let mem of participants) {
+    const emoji = getRandomEmoji();
+    message += `${emoji} @${mem.id.split('@')[0]}\n`;
   }
-  const pesan = args.join` `;
-  const colombia = `Ꙭ *Mensaje:* ${pesan}`;
-  let teks = `𖣘 *INVOCANDO GRUPO*\n${colombia}\n\n𖣔 *Tags:*\n`;
-  for (const mem of participants) {
-    teks += `@${mem.id.split('@')[0]}\n`;
-  }
-  conn.sendMessage(m.chat, {text: teks, mentions: participants.map((a) => a.id)} );
+
+  conn.sendMessage(m.chat, { text: message, mentions: participants.map(a => a.id) }, { quoted: m });
 };
-handler.help = ['tagall *<mesaje>*', 'invocar *<mesaje>*'];
-handler.tags = ['grupo'];
-handler.command = ['tagall', 'invocar'];
+
+handler.help = ['tagall','todos','invocar'];
+handler.tags = ['group'];
+handler.command = /^(tagall|todos|here)$/i;
 handler.admin = true;
 handler.group = true;
+
 export default handler;
