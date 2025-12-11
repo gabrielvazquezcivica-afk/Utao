@@ -8,7 +8,7 @@ const handler = async (m, { conn, participants, usedPrefix, command }) => {
 
   const getRandomEmoji = () => emojis[Math.floor(Math.random() * emojis.length)];
 
-  let message = `*MENCION GENERAL 🌟* \n\nMensajes para todos:\n\n`;
+  let message = `*👥 TAGALL* \n\nMensajes para todos:\n\n`;
 
   for (let mem of participants) {
     const emoji = getRandomEmoji();
@@ -18,7 +18,7 @@ const handler = async (m, { conn, participants, usedPrefix, command }) => {
   conn.sendMessage(m.chat, { text: message, mentions: participants.map(a => a.id) }, { quoted: m });
 };
 
-handler.help = ['tagall','todos','invocar'];
+handler.help = ['tagall'];
 handler.tags = ['group'];
 handler.command = /^(tagall|todos|here)$/i;
 handler.admin = true;
