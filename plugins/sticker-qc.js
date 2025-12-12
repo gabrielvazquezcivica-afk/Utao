@@ -1,49 +1,27 @@
-import axios from 'axios'
+import axios from 'axios';
 
 let handler = async (m, { conn, text }) => {
-  if (!text) return m.reply('⚠️ *Escribe un texto para generar el quote*\nEjemplo:\n.qc Hola grupo')
+  if (!text) return m.reply('⚠️ *Escribe un texto para generar la quote.*\n\nEjemplo:\n.qc Ánimo chicos 🌟');
 
   try {
-    await m.react(rwait)
+    await m.react('⏳');
 
-    let api = `https://vihangayt.me/api/quote?text=${encodeURIComponent(text)}&avatar=${encodeURIComponent(await getPp(conn, m.sender))}&name=${encodeURIComponent(conn.getName(m.sender))}`
+    let name = m.pushName || 'Anónimo';
+    let avatar = await conn.profilePictureUrl(m.sender, 'image').catch(_ => 'https://telegra.ph/file/24fa902ead26340f3df2c.png');
 
-    let res = await axios.get(api, { responseType: 'arraybuffer' })
+    let url = `https://api.popcat.xyz/quote?author=${encodeURIComponent(name)}&image=${encodeURIComponent(avatar)}&text=${encodeURIComponent(text)}`;
 
-    await conn.sendMessage(
-      m.chat,
-      { image: res.data, caption: '✨ Quote generado' },
-      { quoted: m }
-    )
+    let res = await axios.get(url, { responseType: 'arraybuffer' });
 
-    await m.react(done)
+    await conn.sendFile(m.chat, res.data, 'quote.png', '', m);
+    await m.react('✅');
 
-  } catch (e) {
-    console.log(e)
-    await m.react(error)
-    m.reply('❌ No se pudo generar el QC. Intenta más tarde.')
+  } catch (err) {
+    console.error(err);
+    await m.reply('❌ *Error al generar la quote.*\nIntenta más tarde.');
+    await m.react('✖️');
   }
-}
+};
 
-async function getPp(conn, who) {
-  try {
-    return await conn.profilePictureUrl(who, 'image')
-  } catch {
-    return 'https://telegra.ph/file/24fa902ead26340f3df2c.png'
-  }
-}
-
-handler.command = ['qc', 'quote']
-export default handler    )
-
-    await m.react(done)
-
-  } catch (e) {
-    console.log(e)
-    await m.react(error)
-    return m.reply('❌ *Falló la API de Quotes*\nIntenta de nuevo más tarde.')
-  }
-}
-
-handler.command = ['qc', 'quote']
-export default handler
+handler.command = ['qc', 'quote'];
+export default handler;
