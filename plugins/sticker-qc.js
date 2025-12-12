@@ -1,67 +1,49 @@
-/* Codigo copiado de GataBot-MD */
+import axios from 'axios'
 
-import { sticker } from '../lib/sticker.js';
-import axios from 'axios';
+let handler = async (m, { conn, text }) => {
+  if (!text) return m.reply('⚠️ *Escribe un texto para generar el quote*\nEjemplo:\n.qc Hola grupo')
 
-const handler = async (m, {conn, args, usedPrefix, command}) => {
+  let user = m.sender
+  let name = conn.getName(user)
 
-let text;
-if (args.length >= 1) {
-  text = args.join(" ");
-} else if (m.quoted && m.quoted.text) {
-  text = m.quoted.text;
-} else return conn.reply(m.chat, '⚠︎ Te Faltó El Texto!', m, rcanal);
+  // Foto de perfil
+  let pp
+  try {
+    pp = await conn.profilePictureUrl(user, 'image')
+  } catch {
+    pp = 'https://telegra.ph/file/24fa902ead26340f3df2c.png'
+  }
 
-if (!text) return conn.reply(m.chat, '⚠︎ Te Faltó El Texto!', m, rcanal);
+  try {
+    await m.react(rwait)
 
-const who = m.mentionedJid && m.mentionedJid[0] 
-  ? m.mentionedJid[0] 
-  : m.fromMe 
-    ? conn.user.jid 
-    : m.sender;
-
-const mentionRegex = new RegExp(`@${who.split('@')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*`, 'g');
-const mishi = text.replace(mentionRegex, '');
-
-if (mishi.length > 40) return conn.reply(m.chat, '➪ El texto no puede tener mas de 30 caracteres', m, rcanal);
-
-const pp = await conn.profilePictureUrl(who).catch((_) => 'https://telegra.ph/file/24fa902ead26340f3df2c.png');
-const nombre = await conn.getName(who);
-
-const obj = {
-  type: "quote",
-  format: "png",
-  backgroundColor: "#000000",
-  width: 512,
-  height: 768,
-  scale: 2,
-  messages: [
-    {
-      entities: [],
-      avatar: true,
-      from: {
-        id: who,          // ← FIX: ID REAL DEL USUARIO
-        name: nombre,     // ← NOMBRE REAL
-        photo: { url: pp }// ← FOTO REAL
-      },
-      text: mishi,
-      replyMessage: {}
+    const body = {
+      quote: text,
+      author: name,
+      avatar: pp
     }
-  ]
-};
 
-const json = await axios.post('https://bot.lyo.su/quote/generate', obj, {headers: {'Content-Type': 'application/json'}});
-const buffer = Buffer.from(json.data.result.image, 'base64');
+    const res = await axios({
+      method: 'POST',
+      url: 'https://api.quotely.xyz/generate',
+      data: body,
+      responseType: 'arraybuffer'
+    })
 
-let stiker = await sticker(buffer, false, global.packsticker, global.author);
-if (stiker) return conn.sendFile(m.chat, stiker, 'error.webp', '', m);
+    await conn.sendMessage(
+      m.chat,
+      { image: res.data, caption: '✨ Quote generado' },
+      { quoted: m }
+    )
 
-};
+    await m.react(done)
 
-handler.help = ['qc'];
-handler.tags = ['sticker'];
-handler.group = true;
-handler.register = false;
-handler.command = ['qc'];
+  } catch (e) {
+    console.log(e)
+    await m.react(error)
+    return m.reply('❌ *Falló la API de Quotes*\nIntenta de nuevo más tarde.')
+  }
+}
 
-export default handler;
+handler.command = ['qc', 'quote']
+export default handler
