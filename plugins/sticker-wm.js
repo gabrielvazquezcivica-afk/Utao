@@ -1,29 +1,43 @@
 import { addExif } from '../lib/sticker.js'
 
 let handler = async (m, { conn, text }) => {
-  if (!m.quoted) return m.reply('*⚠ El sticker!*')
-  let stiker = false
+  // Validar respuesta a sticker
+  if (!m.quoted || !/sticker/.test(m.quoted.mtype))
+    return m.reply('⚠️ *Responde a un sticker*')
+
+  if (!text)
+    return m.reply('⚠️ *Escribe el pack y/o autor*\n\nEjemplo:\n.wm MiPack|Gabriel')
+
   try {
-   await m.react(rwait)
+    await m.react(rwait)
+
     let [packname, ...author] = text.split('|')
     author = (author || []).join('|')
+
+    // Validar mimetype
     let mime = m.quoted.mimetype || ''
-    if (!/webp/.test(mime)) return m.reply('⚠️ *Responde a un sticker*')
+    if (!/webp/.test(mime)) return m.reply('⚠️ *Solo stickers webp*')
+
+    // Descargar sticker
     let img = await m.quoted.download()
-    if (!img) return m.reply('⚠ *Responde a un sticker!*')
-    stiker = await addExif(img, packname || '', author || '')
+    if (!img) return m.reply('⚠️ *No pude descargar el sticker*')
+
+    // Convertir con Exif
+    let stiker = await addExif(img, packname || '', author || '')
+
+    // Enviar resultado
+    await conn.sendFile(m.chat, stiker, 'wm.webp', '', m)
+    await m.react(done)
+
   } catch (e) {
     console.error(e)
-    if (Buffer.isBuffer(e)) stiker = e
-  } finally {
-  // await conn.reply(m.chat, global.wait, m)
-     if (stiker) conn.sendFile(m.chat, stiker, 'wm.webp', '', m ), //true, { contextInfo: { 'forwardingScore': 200, 'isForwarded': false, externalAdReply:{ showAdAttribution: false, title: `🦋 HuTao-Proyect ❤️‍🔥`, body: `★彡( Ӿł_₥ł₲ɄɆⱠØ₦77ӾӾ )彡★`, mediaType: 2, sourceUrl: redes, thumbnail: icons}}}, { quoted: m })
-  await m.react(done)
-     throw 'no se pudo convertir tu stickers'
+    await m.react(error)
+    return m.reply('❌ *No se pudo convertir tu sticker*\nVerifica que sea un sticker válido.')
   }
 }
+
 handler.help = ['take *<nombre>|<autor>*']
 handler.tags = ['sticker']
-handler.command = ['take', 'robar', 'wm'] 
+handler.command = ['take', 'robar', 'wm']
 
 export default handler
