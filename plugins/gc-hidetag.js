@@ -5,16 +5,36 @@ const handler = async (m, { conn, text, participants }) => {
 
   const users = participants.map(u => u.id);
 
+  // Obtener nombre del bot
+  const botName = conn.getName(conn.user.jid);
+
+  // Fecha actual
+  const date = new Date();
+  const day = date.toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+
+  const footer = `\n\n> ${botName} — ${day}`;
+
   // Si no hay texto y no se respondió a nada
   if (!text && !m.quoted) {
-    return conn.reply(m.chat, '*⚠️ Debes escribir un mensaje o responder a uno para usar este comando.*', m);
+    return conn.reply(
+      m.chat,
+      '*⚠️ Debes escribir un mensaje o responder a uno para usar este comando.*',
+      m
+    );
   }
 
   // Si hay texto y NO es respuesta a un mensaje → envía texto con hidetag
   if (text && !m.quoted) {
     return conn.sendMessage(
       m.chat,
-      { text, mentions: users },
+      {
+        text: text + footer,
+        mentions: users
+      },
       { quoted: m }
     );
   }
@@ -24,11 +44,9 @@ const handler = async (m, { conn, text, participants }) => {
     const q = m.quoted;
     const mime = q.mtype;
 
-    // Reenviar exactamente el contenido del mensaje citado
     let msg = {};
 
     switch (mime) {
-
       case 'audioMessage':
         msg = {
           audio: await q.download(),
@@ -41,7 +59,7 @@ const handler = async (m, { conn, text, participants }) => {
       case 'imageMessage':
         msg = {
           image: await q.download(),
-          caption: q.text || text || '',
+          caption: (q.text || text || '') + footer,
           mentions: users
         };
         break;
@@ -49,7 +67,7 @@ const handler = async (m, { conn, text, participants }) => {
       case 'videoMessage':
         msg = {
           video: await q.download(),
-          caption: q.text || text || '',
+          caption: (q.text || text || '') + footer,
           mentions: users
         };
         break;
@@ -63,7 +81,7 @@ const handler = async (m, { conn, text, participants }) => {
 
       default:
         msg = {
-          text: q.text || text || '',
+          text: (q.text || text || '') + footer,
           mentions: users
         };
         break;
