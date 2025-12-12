@@ -1,61 +1,95 @@
-// gc-promote.js
-let handler = async (m, { conn, args, isAdmin, isBotAdmin, usedPrefix }) => {
-  const chat = m.chat;
-  const command = m.command.toLowerCase();
+const handler = async (m, { conn, participants, usedPrefix, command }) => {
+try {
 
-  if (!m.isGroup)
-    return conn.sendMessage(chat, { text: '❗ Este comando solo funciona en grupos.' });
+    // Evita error de undefined.toLowerCase()
+    command = (command || "").toLowerCase()
 
-  // Debe ser admin para promover/despromover
-  if (!isAdmin)
-    return conn.sendMessage(chat, { text: '❗ Solo los administradores pueden usar este comando.' });
+    if (!m.isGroup)
+        return conn.reply(m.chat, '❗ *Este comando solo funciona en grupos.*', m)
 
-  // El bot también debe ser admin del grupo
-  if (!isBotAdmin)
-    return conn.sendMessage(chat, { text: '❗ Necesito permisos de admin para ejecutar esto.' });
+    // Usuario mencionado o citado
+    let user = m.mentionedJid[0]
+        ? m.mentionedJid[0]
+        : m.quoted
+            ? m.quoted.sender
+            : false
 
-  // Obtener usuario objetivo
-  let target = m.mentionedJid?.[0] ||
-    (args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
+    if (!user) {
+        return conn.reply(m.chat,
+            `🚩 *Etiqueta o responde al mensaje del usuario que quieres ${(command === 'promote' ? 'dar admin' : 'quitar admin')}.*`,
+            m
+        )
+    }
 
-  if (!target)
-    return conn.sendMessage(chat, { text: `Usa: ${usedPrefix}${command} @usuario`, quoted: m });
+    // ❌ ANTI AUTO-ADMIN (NO permitir darse admin a sí mismo)
+    if (user === m.sender) {
+        return conn.reply(
+            m.chat,
+            '⛔ *No puedes darte admin a ti mismo.*',
+            m
+        )
+    }
 
-  // Evitar promover/despromover al propio bot equivocadamente
-  if (target === conn.user.jid)
-    return conn.sendMessage(chat, { text: 'No puedo cambiar mis propios permisos.' });
+    // Metadata
+    const groupMetadata = await conn.groupMetadata(m.chat)
+    const groupAdmins = groupMetadata.participants.filter(p => p.admin)
+    const isAdmin = groupAdmins.some(a => a.id === user)
 
-  try {
-    // PROMOVER
+    // ───────────────
+    //     PROMOTE
+    // ───────────────
     if (command === 'promote') {
-      await conn.groupMakeAdmin(chat, [target]);
-      await conn.sendMessage(chat, {
-        text: `✅ @${target.split('@')[0]} ha sido promovido a administrador.`,
-        mentions: [target]
-      });
-      await conn.sendMessage(chat, { react: { text: "📈", key: m.key } });
+
+        if (isAdmin)
+            return conn.reply(m.chat, '⚠️ *Ese usuario ya es administrador.*', m)
+
+        await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
+
+        await conn.reply(
+            m.chat,
+            `🟢 *Administrador otorgado*\n@${user.split('@')[0]} ahora es admin.`,
+            m,
+            { mentions: [user] }
+        )
+
+        await m.react('🎉')
+        return
     }
 
-    // DESPROMOVER
+    // ───────────────
+    //     DEMOTE
+    // ───────────────
     if (command === 'demote') {
-      await conn.groupDemoteAdmin(chat, [target]);
-      await conn.sendMessage(chat, {
-        text: `✅ @${target.split('@')[0]} ha sido despromovido.`,
-        mentions: [target]
-      });
-      await conn.sendMessage(chat, { react: { text: "📉", key: m.key } });
-    }
-  } catch (err) {
-    console.error(err);
-    return conn.sendMessage(chat, {
-      text: '❗ Ocurrió un error al cambiar permisos. Asegúrate de que el bot tenga admin y que el usuario no sea el propietario.',
-      quoted: m
-    });
-  }
-};
 
-handler.help = ['promote @tag', 'demote @tag'];
-handler.tags = ['group'];
-handler.command = /^promote|demote$/i;
+        if (!isAdmin)
+            return conn.reply(m.chat, '⚠️ *Ese usuario no es administrador.*', m)
+
+        await conn.groupParticipantsUpdate(m.chat, [user], 'demote')
+
+        await conn.reply(
+            m.chat,
+            `🔻 *Administrador retirado*\n@${user.split('@')[0]} ahora es miembro normal.`,
+            m,
+            { mentions: [user] }
+        )
+
+        await m.react('👍🏻')
+        return
+    }
+
+} catch (e) {
+    console.log('ERROR EN GC-ADMIN.JS =>', e)
+    conn.reply(m.chat, '❌ *Ocurrió un error al ejecutar el comando.*', m)
+}}
+
+handler.help = ['promote', 'demote']
+handler.tags = ['group']
+handler.command = ['promote', 'daradmin', 'demote', 'quitaradmin']
+
+handler.group = true
+handler.admin = true
+handler.botAdmin = true
+
+export default handlerhandler.command = /^promote|demote$/i;
 
 export default handler;
