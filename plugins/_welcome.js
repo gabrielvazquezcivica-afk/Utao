@@ -1,50 +1,93 @@
-let WAMessageStubType = (await import('@whiskeysockets/baileys')).default;
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 
-export async function before(m, { conn, participants, groupMetadata }) {
+export async function before(m, { conn }) {
   if (!m.messageStubType || !m.isGroup) return true;
 
-  let vn = 'https://qu.ax/Jinc.mp3';
-  let vn2 = 'https://qu.ax/ujpr.mp3';
   let chat = global.db.data.chats[m.chat];
-  const getMentionedJid = () => {
-    return m.messageStubParameters.map(param => `${param}@s.whatsapp.net`);
-  };
 
-  let who = m.messageStubParameters[0] + '@s.whatsapp.net';
-  let user = global.db.data.users[who];
+  // AUDIOS
+  let audioWelcome = 'https://d.uguu.se/woNwUdOC.mp3'; // Bienvenida
+  let audioBye = 'https://o.uguu.se/AGcyxnDN.mp3';     // Despedida
 
-  let userName = user ? user.name : await conn.getName(who);
+  // OBTENER JID DEL USUARIO
+  let userJid = m.messageStubParameters[0] + '@s.whatsapp.net';
 
- if (chat.welcome && m.messageStubType === 27) {
-    this.sendMessage(m.chat, { audio: { url: vn }, 
-    contextInfo: { forwardedNewsletterMessageInfo: { 
-    newsletterJid: channelRD.id, 
-    serverMessageId: '', 
-    newsletterName: channelRD.name }, forwardingScore: 9999999, isForwarded: true, mentionedJid: getMentionedJid(), "externalAdReply": { 
-    "title":`♡︎✿︎𝙱𝚒𝚎𝚗𝚟𝚎𝚗𝚒𝚍𝚘ꨄ︎ఌ︎`, 
-    "body": `${userName}`, 
-    "previewType": "PHOTO", 
-    "thumbnailUrl": null,
-    "thumbnail": icons, 
-    "sourceUrl": redes, 
-    "showAdAttribution": true}}, 
-     seconds: '4556', ptt: true, mimetype: 'audio/mpeg', fileName: `error.mp3` }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
-}
-
-  if (chat.welcome && (m.messageStubType === 28 || m.messageStubType === 32)) {
-    this.sendMessage(m.chat, { audio: { url: vn2 }, 
-    contextInfo: { forwardedNewsletterMessageInfo: { 
-    newsletterJid: channelRD.id, 
-    serverMessageId: '', 
-    newsletterName: channelRD.name }, forwardingScore: 9999999, isForwarded: true, mentionedJid: getMentionedJid(), "externalAdReply": { 
-    "title": `❀☹︎𝙰𝚍𝚒𝚘𝚜☹︎☯︎`, 
-    "body": `${userName}, se despide.`, 
-    "previewType": "PHOTO", 
-    "thumbnailUrl": null,
-    "thumbnail": icons, 
-    "sourceUrl": redes, 
-    "showAdAttribution": true}}, 
-     seconds: '4556', ptt: true, mimetype: 'audio/mpeg', fileName: `error.mp3` }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
+  // FOTO DE PERFIL DEL USUARIO O LA DEL BOT
+  let ppUser;
+  try { 
+    ppUser = await conn.profilePictureUrl(userJid, 'image');
+  } catch {
+    ppUser = await conn.profilePictureUrl(conn.user.jid, 'image'); // fallback
   }
-}
+
+  // NOMBRE
+  let name = await conn.getName(userJid);
+
+  // LISTA DE MENSAJES ALEATORIOS (CRUELES EXTREMOS)
+  const welcomeMessages = [
+    `🩸 *Alguien se perdió y cayó aquí* 🩸\nBienvenido *${name}*, aunque nadie te pidió.`,
+    `🔥 *Nuevo inútil detectado* 🔥\n*${name}* entró… qué desgracia para el grupo.`,
+    `👹 *Otro alma condenada llegó* 👹\nSiéntete como en casa, aunque no te queramos, *${name}*.`,
+    `🕳️ *Apareció un NPC* 🕳️\nHola *${name}*, trata de no hacer el ridículo… aunque lo dudo.`,
+    `💀 *Respiren hondo… llegó otro estorbo* 💀\nBienvenido *${name}*, intenta no fallar… pero sabemos que lo harás.`
+  ];
+
+  const byeMessages = [
+    `⚰️ *Gracias al cielo* ⚰️\n*${name}* se fue. El grupo mejora automáticamente.`,
+    `🗑️ *Un desecho menos* 🗑️\nAdiós *${name}*, tu ausencia es un regalo.`,
+    `👋 *Por fin se largó* 👋\nVete tranquilo *${name}*, nadie te detiene.`,
+    `🔥 *Se evaporó el estorbo* 🔥\nEl universo agradece que *${name}* haya salido.`,
+    `😮‍💨 *Qué alivio* 😮‍💨\n*${name}* dejó el grupo… ya hacía falta limpieza.`
+  ];
+
+  // SELECCIONAR UNO AL AZAR
+  const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  // BIENVENIDA (STUB 27)
+  if (chat.welcome && m.messageStubType === 27) {
+    await conn.sendMessage(m.chat, {
+      text: pickRandom(welcomeMessages),
+      contextInfo: {
+        mentionedJid: [userJid],
+        externalAdReply: {
+          title: "🩸 Bienvenido al Infierno 🩸",
+          body: name,
+          thumbnailUrl: ppUser,
+          mediaType: 1,
+          showAdAttribution: true
+        }
+      }
+    });
+
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioWelcome },
+      ptt: true,
+      mimetype: 'audio/mpeg'
+    });
+  }
+
+  // DESPEDIDA (STUB 28 / 32)
+  if (chat.welcome && (m.messageStubType === 28 || m.messageStubType === 32)) {
+    await conn.sendMessage(m.chat, {
+      text: pickRandom(byeMessages),
+      contextInfo: {
+        mentionedJid: [userJid],
+        externalAdReply: {
+          title: "⚰️ Adiós Basura ⚰️",
+          body: `${name} salió del grupo`,
+          thumbnailUrl: ppUser,
+          mediaType: 1,
+          showAdAttribution: true
+        }
+      }
+    });
+
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioBye },
+      ptt: true,
+      mimetype: 'audio/mpeg'
+    });
+  }
+
+  return true;
+          }
