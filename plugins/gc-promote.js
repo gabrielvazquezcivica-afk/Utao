@@ -1,38 +1,99 @@
-var handler = async (m, { conn,usedPrefix, command, text }) => {
+/**
+ * gc-promote.js (mejorado)
+ * Ahora incluye reacciones y mensajes de confirmación más completos.
+ */
 
-if (isNaN(text) && !text.match(/@/g)){
+export default async function handler(m, { conn, isAdmin, isBotAdmin, usedPrefix, command, args }) {
 
-} else if (isNaN(text)) {
-var number = text.split`@`[1]
-} else if (!isNaN(text)) {
-var number = text
-}
+  const chat = m.chat;
 
-if (!text && !m.quoted) return conn.reply(m.chat, `★ *Responda a un participante del grupo para asignarle admin.*`, m, rcanal)
-if (number.length > 13 || (number.length < 11 && number.length > 0)) return conn.reply(m.chat, `᯽ *Debe de responder o mensionar a una persona para usar este comando.*`, m, fake)
+  if (!m.isGroup) {
+    await conn.sendMessage(chat, { react: { text: "❌", key: m.key } });
+    return conn.sendMessage(chat, '❌ *Este comando solo funciona en grupos.*', { quoted: m });
+  }
 
-try {
-if (text) {
-var user = number + '@s.whatsapp.net'
-} else if (m.quoted.sender) {
-var user = m.quoted.sender
-} else if (m.mentionedJid) {
-var user = number + '@s.whatsapp.net'
-} 
-} catch (e) {
-} finally {
-conn.groupParticipantsUpdate(m.chat, [user], 'promote')
-conn.reply(m.chat, `★ *Fue agregado como admin del grupo con exito.*`, m, fake)
-}
+  if (!isAdmin) {
+    await conn.sendMessage(chat, { react: { text: "🚫", key: m.key } });
+    return conn.sendMessage(chat, '🚫 *Solo los administradores pueden usar este comando.*', { quoted: m });
+  }
 
-}
-handler.help = ['promote']
-handler.tags = ['grupo']
-handler.command = ['promote','darpija', 'promover']
+  if (!isBotAdmin) {
+    await conn.sendMessage(chat, { react: { text: "⚠️", key: m.key } });
+    return conn.sendMessage(chat, '⚠️ *Necesito ser administrador para gestionar roles.*', { quoted: m });
+  }
 
-handler.group = true
-handler.admin = true
-handler.botAdmin = true
-handler.fail = null
+  // Obteniendo usuario objetivo
+  let target = m.mentionedJid && m.mentionedJid[0];
+  if (!target && args.length) {
+    const number = args[0].replace(/[^0-9]/g, '');
+    if (number) target = number + '@s.whatsapp.net';
+  }
 
-export default handler
+  if (!target) {
+    await conn.sendMessage(chat, { react: { text: "❓", key: m.key } });
+    return conn.sendMessage(chat, `📌 *Uso correcto:* ${usedPrefix}${command} @usuario`, { quoted: m });
+  }
+
+  // Obtener admins del grupo
+  const groupAdmins = (await conn.groupMetadata(chat)).participants
+    .filter(u => u.admin)
+    .map(u => u.id);
+
+  const username = "@"+target.split("@")[0];
+
+  // PROMOVER
+  if (command.toLowerCase() === "promote") {
+
+    if (groupAdmins.includes(target)) {
+      await conn.sendMessage(chat, { react: { text: "⚠️", key: m.key } });
+      return conn.sendMessage(chat, `⚠️ ${username} *ya es administrador.*`, {
+        mentions: [target],
+        quoted: m
+      });
+    }
+
+    await conn.groupParticipantsUpdate(chat, [target], "promote");
+
+    await conn.sendMessage(chat, { react: { text: "🟢", key: m.key } });
+
+    return conn.sendMessage(chat,
+      `🎉 *Promoción exitosa*\n\n` +
+      `✨ ${username} ahora es *administrador del grupo*.\n` +
+      `🛡️ Gracias por apoyar a la comunidad.`,
+      {
+        mentions: [target],
+        quoted: m
+      }
+    );
+  }
+
+  // DEMOVER
+  if (command.toLowerCase() === "demote") {
+
+    if (!groupAdmins.includes(target)) {
+      await conn.sendMessage(chat, { react: { text: "⚠️", key: m.key } });
+      return conn.sendMessage(chat, `⚠️ ${username} *no es administrador.*`, {
+        mentions: [target],
+        quoted: m
+      });
+    }
+
+    await conn.groupParticipantsUpdate(chat, [target], "demote");
+
+    await conn.sendMessage(chat, { react: { text: "🔴", key: m.key } });
+
+    return conn.sendMessage(chat,
+      `🔻 *Democión realizada*\n\n` +
+      `💬 ${username} *ya no es administrador* del grupo.\n` +
+      `📍 Aplique las reglas según corresponda.`,
+      {
+        mentions: [target],
+        quoted: m
+      }
+    );
+  }
+
+  // Si el comando no es válido
+  await conn.sendMessage(chat, { react: { text: "❌", key: m.key } });
+  return conn.sendMessage(chat, `❌ *Comando desconocido.* Usa:* ${usedPrefix}promote o ${usedPrefix}demote`, { quoted: m });
+                          }
