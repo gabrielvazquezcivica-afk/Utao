@@ -73,5 +73,8 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line, x, y);
 }
 
-handler.command = ["qc", "quote"];
+handler.help = ["qc"];
+handler.tags = ["sticker"];
+handler.command = /^qc$/i;
+
 export default handler;
