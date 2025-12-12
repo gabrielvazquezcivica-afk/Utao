@@ -8,15 +8,30 @@ const handler = async (m, { conn, text, participants }) => {
   // Obtener nombre del bot
   const botName = conn.getName(conn.user.jid);
 
-  // Fecha actual
-  const date = new Date();
-  const day = date.toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+  // Meses con emoji (puedes cambiar los emojis)
+  const monthNames = [
+    'Enero ❄️',
+    'Febrero ❤️',
+    'Marzo 🌱',
+    'Abril 🌧️',
+    'Mayo 🌼',
+    'Junio ☀️',
+    'Julio 🔥',
+    'Agosto 🌞',
+    'Septiembre 🍂',
+    'Octubre 🎃',
+    'Noviembre 🍁',
+    'Diciembre 🎄'
+  ];
 
-  const footer = `\n\n> ${botName} — ${day}`;
+  const date = new Date();
+  const dayNum   = date.getDate();
+  const monthTxt = monthNames[date.getMonth()];
+  const year     = date.getFullYear();
+
+  const finalDate = `${dayNum} de ${monthTxt} de ${year}`;
+
+  const footer = `\n\n> ${botName} — ${finalDate}`;
 
   // Si no hay texto y no se respondió a nada
   if (!text && !m.quoted) {
@@ -27,7 +42,7 @@ const handler = async (m, { conn, text, participants }) => {
     );
   }
 
-  // Si hay texto y NO es respuesta a un mensaje → envía texto con hidetag
+  // Mandar texto si no es respuesta
   if (text && !m.quoted) {
     return conn.sendMessage(
       m.chat,
@@ -39,7 +54,7 @@ const handler = async (m, { conn, text, participants }) => {
     );
   }
 
-  // Si SÍ está respondiendo a un mensaje
+  // Si está respondiendo
   if (m.quoted) {
     const q = m.quoted;
     const mime = q.mtype;
@@ -47,6 +62,7 @@ const handler = async (m, { conn, text, participants }) => {
     let msg = {};
 
     switch (mime) {
+
       case 'audioMessage':
         msg = {
           audio: await q.download(),
