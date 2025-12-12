@@ -1,99 +1,61 @@
-/**
- * gc-promote.js (mejorado)
- * Ahora incluye reacciones y mensajes de confirmación más completos.
- */
-
-export default async function handler(m, { conn, isAdmin, isBotAdmin, usedPrefix, command, args }) {
-
+// gc-promote.js
+let handler = async (m, { conn, args, isAdmin, isBotAdmin, usedPrefix }) => {
   const chat = m.chat;
+  const command = m.command.toLowerCase();
 
-  if (!m.isGroup) {
-    await conn.sendMessage(chat, { react: { text: "❌", key: m.key } });
-    return conn.sendMessage(chat, '❌ *Este comando solo funciona en grupos.*', { quoted: m });
-  }
+  if (!m.isGroup)
+    return conn.sendMessage(chat, { text: '❗ Este comando solo funciona en grupos.' });
 
-  if (!isAdmin) {
-    await conn.sendMessage(chat, { react: { text: "🚫", key: m.key } });
-    return conn.sendMessage(chat, '🚫 *Solo los administradores pueden usar este comando.*', { quoted: m });
-  }
+  // Debe ser admin para promover/despromover
+  if (!isAdmin)
+    return conn.sendMessage(chat, { text: '❗ Solo los administradores pueden usar este comando.' });
 
-  if (!isBotAdmin) {
-    await conn.sendMessage(chat, { react: { text: "⚠️", key: m.key } });
-    return conn.sendMessage(chat, '⚠️ *Necesito ser administrador para gestionar roles.*', { quoted: m });
-  }
+  // El bot también debe ser admin del grupo
+  if (!isBotAdmin)
+    return conn.sendMessage(chat, { text: '❗ Necesito permisos de admin para ejecutar esto.' });
 
-  // Obteniendo usuario objetivo
-  let target = m.mentionedJid && m.mentionedJid[0];
-  if (!target && args.length) {
-    const number = args[0].replace(/[^0-9]/g, '');
-    if (number) target = number + '@s.whatsapp.net';
-  }
+  // Obtener usuario objetivo
+  let target = m.mentionedJid?.[0] ||
+    (args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
 
-  if (!target) {
-    await conn.sendMessage(chat, { react: { text: "❓", key: m.key } });
-    return conn.sendMessage(chat, `📌 *Uso correcto:* ${usedPrefix}${command} @usuario`, { quoted: m });
-  }
+  if (!target)
+    return conn.sendMessage(chat, { text: `Usa: ${usedPrefix}${command} @usuario`, quoted: m });
 
-  // Obtener admins del grupo
-  const groupAdmins = (await conn.groupMetadata(chat)).participants
-    .filter(u => u.admin)
-    .map(u => u.id);
+  // Evitar promover/despromover al propio bot equivocadamente
+  if (target === conn.user.jid)
+    return conn.sendMessage(chat, { text: 'No puedo cambiar mis propios permisos.' });
 
-  const username = "@"+target.split("@")[0];
-
-  // PROMOVER
-  if (command.toLowerCase() === "promote") {
-
-    if (groupAdmins.includes(target)) {
-      await conn.sendMessage(chat, { react: { text: "⚠️", key: m.key } });
-      return conn.sendMessage(chat, `⚠️ ${username} *ya es administrador.*`, {
-        mentions: [target],
-        quoted: m
+  try {
+    // PROMOVER
+    if (command === 'promote') {
+      await conn.groupMakeAdmin(chat, [target]);
+      await conn.sendMessage(chat, {
+        text: `✅ @${target.split('@')[0]} ha sido promovido a administrador.`,
+        mentions: [target]
       });
+      await conn.sendMessage(chat, { react: { text: "📈", key: m.key } });
     }
 
-    await conn.groupParticipantsUpdate(chat, [target], "promote");
-
-    await conn.sendMessage(chat, { react: { text: "🟢", key: m.key } });
-
-    return conn.sendMessage(chat,
-      `🎉 *Promoción exitosa*\n\n` +
-      `✨ ${username} ahora es *administrador del grupo*.\n` +
-      `🛡️ Gracias por apoyar a la comunidad.`,
-      {
-        mentions: [target],
-        quoted: m
-      }
-    );
-  }
-
-  // DEMOVER
-  if (command.toLowerCase() === "demote") {
-
-    if (!groupAdmins.includes(target)) {
-      await conn.sendMessage(chat, { react: { text: "⚠️", key: m.key } });
-      return conn.sendMessage(chat, `⚠️ ${username} *no es administrador.*`, {
-        mentions: [target],
-        quoted: m
+    // DESPROMOVER
+    if (command === 'demote') {
+      await conn.groupDemoteAdmin(chat, [target]);
+      await conn.sendMessage(chat, {
+        text: `✅ @${target.split('@')[0]} ha sido despromovido.`,
+        mentions: [target]
       });
+      await conn.sendMessage(chat, { react: { text: "📉", key: m.key } });
     }
-
-    await conn.groupParticipantsUpdate(chat, [target], "demote");
-
-    await conn.sendMessage(chat, { react: { text: "🔴", key: m.key } });
-
-    return conn.sendMessage(chat,
-      `🔻 *Democión realizada*\n\n` +
-      `💬 ${username} *ya no es administrador* del grupo.\n` +
-      `📍 Aplique las reglas según corresponda.`,
-      {
-        mentions: [target],
-        quoted: m
-      }
-    );
+  } catch (err) {
+    console.error(err);
+    return conn.sendMessage(chat, {
+      text: '❗ Ocurrió un error al cambiar permisos. Asegúrate de que el bot tenga admin y que el usuario no sea el propietario.',
+      quoted: m
+    });
   }
+};
 
-  // Si el comando no es válido
-  await conn.sendMessage(chat, { react: { text: "❌", key: m.key } });
-  return conn.sendMessage(chat, `❌ *Comando desconocido.* Usa:* ${usedPrefix}promote o ${usedPrefix}demote`, { quoted: m });
-                          }
+handler.help = ['promote @tag', 'demote @tag'];
+handler.tags = ['group'];
+handler.command = /^promote|demote$/i;
+
+export default handler;
