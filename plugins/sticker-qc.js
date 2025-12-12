@@ -1,27 +1,42 @@
 import axios from 'axios'
+import { writeFileSync } from 'fs'
+import { Sticker } from 'wa-sticker-formatter'
 
 let handler = async (m, { conn, text }) => {
-  if (!text) return m.reply('⚠️ *Ingresa el texto')
-  
+  if (!text) return m.reply('⚠️ !Ingresa el texto')
+
   try {
     await m.react('⏳')
 
-    const payload = {
-      quote: text,
-      author: "HuTao-Bot",
-      avatar: "https://telegra.ph/file/24fa902ead26340f3df2c.png"
-    }
+    // API FUNCIONAL SIN ERRORES DNS
+    const url = `https://api.akuari.my.id/canvas/quotemaker?text=${encodeURIComponent(text)}&author=HuTao-Bot`
 
-    let res = await axios.post("https://api.quotely.xyz/generate", payload, {
-      responseType: "arraybuffer"
+    // Descargar imagen generada
+    let res = await axios.get(url, { responseType: 'arraybuffer' })
+
+    // Guardar temporalmente
+    let imgPath = './tmp/qc.jpg'
+    writeFileSync(imgPath, res.data)
+
+    // Convertir a sticker
+    let stiker = new Sticker(imgPath, {
+      pack: "HuTao-Proyect",
+      author: "🔥 Quotes",
+      type: "full",
+      categories: ["✨"],
+      id: "qc-sticker",
     })
 
-    await conn.sendFile(m.chat, res.data, "quote.png", "", m)
+    const buffer = await stiker.toBuffer()
+
+    // Enviar sticker ya convertido
+    await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m })
+
     await m.react('✅')
 
   } catch (e) {
     console.log(e)
-    m.reply("❌ *Falló la API de Quotes*\nIntenta más tarde.")
+    await m.reply("❌ *No se pudo generar el sticker*\nIntenta de nuevo.")
     await m.react('✖️')
   }
 }
