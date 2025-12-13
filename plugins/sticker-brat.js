@@ -1,25 +1,62 @@
-// sticker-brat.js // Comando: .brat <texto> // Crea un sticker con el texto que escriba el usuario
-
 import { createCanvas } from 'canvas'
+import { sticker } from '../lib/sticker.js'
+import fs from 'fs'
+import path from 'path'
 
-let handler = async (m, { conn, text }) => { if (!text) throw '✏️ Escribe el texto para el sticker\nEjemplo: .brat Hola mundo'
+let handler = async (m, { conn, text }) => {
+  let txt = text || m.quoted?.text
+  if (!txt) return m.reply('✍️ Usa:\n.brat tamadre')
 
-const size = 512 const canvas = createCanvas(size, size) const ctx = canvas.getContext('2d')
+  // 🔥 Reacción
+  await conn.sendMessage(m.chat, {
+    react: { text: '🎭', key: m.key }
+  })
 
-// Fondo ctx.fillStyle = '#111111' ctx.fillRect(0, 0, size, size)
+  txt = txt.slice(0, 50)
 
-// Texto let fontSize = 80 ctx.fillStyle = '#ffffff' ctx.textAlign = 'center' ctx.textBaseline = 'middle'
+  const size = 512
+  const canvas = createCanvas(size, size)
+  const ctx = canvas.getContext('2d')
 
-// Autoajuste de texto while (fontSize > 20) { ctx.font = bold ${fontSize}px Sans if (ctx.measureText(text).width < size - 40) break fontSize -= 4 }
+  // Fondo blanco
+  ctx.fillStyle = '#FFFFFF'
+  ctx.fillRect(0, 0, size, size)
 
-ctx.fillText(text, size / 2, size / 2, size - 40)
+  // Texto negro
+  ctx.fillStyle = '#000000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
 
-const buffer = canvas.toBuffer()
+  let fontSize = 90
+  ctx.font = `bold ${fontSize}px Arial`
+  while (ctx.measureText(txt).width > 460) {
+    fontSize -= 5
+    ctx.font = `bold ${fontSize}px Arial`
+  }
 
-// Enviar como sticker (forma compatible con Baileys) await conn.sendImageAsSticker(m.chat, buffer, m, { packname: 'Brat Stickers', author: 'Bot' }) }
+  ctx.fillText(txt, size / 2, size / 2)
+
+  // Crear sticker
+  let imgBuffer = canvas.toBuffer()
+  let stiker = await sticker(imgBuffer, false, {
+    pack: 'BRAT',
+    author: 'Utao Bot'
+  })
+
+  // 📁 Carpeta stickers
+  let dir = './stickers'
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir)
+
+  // 💾 Archivo fijo
+  let filePath = path.join(dir, 'sticker-brat.webp')
+  fs.writeFileSync(filePath, stiker)
+
+  // 📤 Enviar
+  await conn.sendMessage(m.chat, { sticker: stiker }, { quoted: m })
+}
 
 handler.help = ['brat <texto>']
-handler.tags = ['sticker'] 
-handler.command = ['brat']
+handler.tags = ['sticker']
+handler.command = /^brat$/i
 
 export default handler
