@@ -1,7 +1,7 @@
 import { createCanvas } from 'canvas'
-import { sticker } from '../lib/sticker.js'
 import fs from 'fs'
 import path from 'path'
+import { sticker } from '../lib/sticker.js'
 
 let handler = async (m, { conn, text }) => {
   let txt = text || m.quoted?.text
@@ -9,7 +9,7 @@ let handler = async (m, { conn, text }) => {
 
   // 🔥 Reacción
   await conn.sendMessage(m.chat, {
-    react: { text: '🎭', key: m.key }
+    react: { text: '🖤', key: m.key }
   })
 
   txt = txt.slice(0, 50)
@@ -37,26 +37,26 @@ let handler = async (m, { conn, text }) => {
   ctx.fillText(txt, size / 2, size / 2)
 
   // Crear sticker
-  let imgBuffer = canvas.toBuffer()
-  let stiker = await sticker(imgBuffer, false, {
+  let buffer = canvas.toBuffer()
+  let stiker = await sticker(buffer, false, {
     pack: 'BRAT',
     author: 'Utao Bot'
   })
 
-  // 📁 Carpeta stickers
+  // Guardar siempre el último
   let dir = './stickers'
   if (!fs.existsSync(dir)) fs.mkdirSync(dir)
 
-  // 💾 Archivo fijo
-  let filePath = path.join(dir, 'sticker-brat.webp')
-  fs.writeFileSync(filePath, stiker)
+  let file = path.join(dir, 'sticker-brat.webp')
+  fs.writeFileSync(file, stiker)
 
-  // 📤 Enviar
+  // Enviar
   await conn.sendMessage(m.chat, { sticker: stiker }, { quoted: m })
 }
 
+/* 🔑 ESTO ES LO QUE LO HACE FUNCIONAR */
 handler.help = ['brat <texto>']
-handler.tags = ['sticker']
-handler.command = /^brat$/i
+handler.tags = ['stickers']   // 👈 plural, como usa tu menú
+handler.command = ['brat']    // 👈 forma compatible
 
 export default handler
