@@ -1,97 +1,66 @@
-import fetch from 'node-fetch'
+let handler = async function (m, { conn }) {
 
-let handler = async function ({ id, participants, action }, { conn }) {
-  let chat = global.db.data.chats[id]
+  if (!m.isGroup) return
+  if (!m.messageStubType) return
+
+  let chat = global.db.data.chats[m.chat]
   if (!chat || !chat.welcome) return
 
-  for (let user of participants) {
+  let raw = m.messageStubParameters?.[0]
+  if (!raw) return
 
-    let userJid = user.endsWith('@s.whatsapp.net')
-      ? user
-      : user.replace('@lid', '@s.whatsapp.net')
+  // 🔥 convertir @lid → jid normal
+  let userJid = raw.replace('@lid', '@s.whatsapp.net')
+  let mention = '@' + userJid.split('@')[0]
 
-    let mention = '@' + userJid.split('@')[0]
+  // audios
+  let audioWelcome = 'https://d.uguu.se/woNwUdOC.mp3'
+  let audioBye = 'https://o.uguu.se/AGcyxnDN.mp3'
 
-    // ===== AUDIOS =====
-    let audioWelcome = 'https://d.uguu.se/woNwUdOC.mp3'
-    let audioBye = 'https://o.uguu.se/AGcyxnDN.mp3'
+  let name = await conn.getName(userJid)
 
-    // ===== FOTO =====
-    let ppUrl
-    try {
-      ppUrl = await conn.profilePictureUrl(userJid, 'image')
-    } catch {
-      ppUrl = await conn.profilePictureUrl(conn.user.jid, 'image')
-    }
+  const welcomes = [
+    `🩸 *Otro error llegó* 🩸\n${mention} entró… nadie lo pidió.`,
+    `👹 *Nuevo NPC detectado* 👹\n${mention} piensa que aquí importa.`,
+    `💀 *Mala noticia* 💀\n${mention} acaba de entrar.`
+  ]
 
-    let ppBuffer = await (await fetch(ppUrl)).buffer()
-    let name = await conn.getName(userJid)
+  const byes = [
+    `⚰️ *Buenas noticias* ⚰️\n${mention} se fue.`,
+    `🗑️ *Basura retirada* 🗑️\n${mention} salió del grupo.`,
+    `🔥 *Alivio total* 🔥\n${mention} ya no está aquí.`
+  ]
 
-    const welcomes = [
-      `🩸 *Otro error llegó* 🩸\n${mention} entró… nadie lo pidió.`,
-      `👹 *Nuevo NPC* 👹\n${mention} piensa que aquí lo quieren.`,
-      `💀 *Mala noticia* 💀\n${mention} acaba de entrar.`
-    ]
+  let pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
-    const byes = [
-      `⚰️ *Buenas noticias* ⚰️\n${mention} se largó.`,
-      `🗑️ *Basura retirada* 🗑️\n${mention} salió del grupo.`,
-      `🔥 *Alivio total* 🔥\n${mention} ya no está aquí.`
-    ]
+  // ===== ENTRÓ =====
+  if (m.messageStubType === 27) {
+    await conn.sendMessage(m.chat, {
+      text: pick(welcomes),
+      mentions: [userJid]
+    })
 
-    let pick = arr => arr[Math.floor(Math.random() * arr.length)]
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioWelcome },
+      ptt: true,
+      mimetype: 'audio/mpeg'
+    })
+  }
 
-    // ===== ENTRÓ =====
-    if (action === 'add') {
-      await conn.sendMessage(id, {
-        text: pick(welcomes),
-        mentions: [userJid],
-        contextInfo: {
-          externalAdReply: {
-            title: '🩸 BIENVENIDO 🩸',
-            body: name,
-            thumbnail: ppBuffer,
-            mediaType: 1,
-            showAdAttribution: true
-          }
-        }
-      })
+  // ===== SALIÓ / KICK =====
+  if (m.messageStubType === 28 || m.messageStubType === 32) {
+    await conn.sendMessage(m.chat, {
+      text: pick(byes),
+      mentions: [userJid]
+    })
 
-      await conn.sendMessage(id, {
-        audio: { url: audioWelcome },
-        ptt: true,
-        mimetype: 'audio/mpeg',
-        seconds: 8
-      })
-    }
-
-    // ===== SALIÓ / KICK =====
-    if (action === 'remove') {
-      await conn.sendMessage(id, {
-        text: pick(byes),
-        mentions: [userJid],
-        contextInfo: {
-          externalAdReply: {
-            title: '⚰️ DESPEDIDA ⚰️',
-            body: name,
-            thumbnail: ppBuffer,
-            mediaType: 1,
-            showAdAttribution: true
-          }
-        }
-      })
-
-      await conn.sendMessage(id, {
-        audio: { url: audioBye },
-        ptt: true,
-        mimetype: 'audio/mpeg',
-        seconds: 6
-      })
-    }
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioBye },
+      ptt: true,
+      mimetype: 'audio/mpeg'
+    })
   }
 }
 
-// 🔴 ESTA LÍNEA ES OBLIGATORIA
-handler.on = 'group-participants.update'
-
+handler.before = true
 export default handler
