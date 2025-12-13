@@ -1,4 +1,4 @@
-// fun-formarpareja.js (+18)
+// fun-formarpareja.js (+18) CON REACCIÓN
 
 const handler = async (m, { conn, participants, isGroup }) => {
   if (!isGroup) throw '❌ Este comando solo funciona en grupos.'
@@ -11,7 +11,6 @@ const handler = async (m, { conn, participants, isGroup }) => {
 
   let p1 = users[Math.floor(Math.random() * users.length)]
   let p2
-
   do {
     p2 = users[Math.floor(Math.random() * users.length)]
   } while (p2 === p1)
@@ -19,14 +18,14 @@ const handler = async (m, { conn, participants, isGroup }) => {
   let compat = Math.floor(Math.random() * 101)
 
   let nivel =
-    compat > 85 ? '🔥 TERMINAN EN LA CAMA' :
+    compat > 85 ? '🔥 TERMINAN DESNUDOS' :
     compat > 65 ? '😈 MUCHA TENSIÓN SEXUAL' :
-    compat > 45 ? '🍷 UNOS BESOS Y COPAS' :
-    compat > 25 ? '😶 SOLO MIRADAS INCÓMODAS' :
-    '💀 NI EN PEDO'
+    compat > 45 ? '🍷 BESOS + ALCOHOL' :
+    compat > 25 ? '😶 SOLO CALENTURA' :
+    '💀 NI BORRACHOS'
 
   let texto = `
-🔞 *FORMANDO PAREJA PROHIBIDA* 🔞
+🔞 *PAREJA PROHIBIDA DETECTADA* 🔞
 
 😏 @${p1.split('@')[0]}
 😈 @${p2.split('@')[0]}
@@ -34,17 +33,18 @@ const handler = async (m, { conn, participants, isGroup }) => {
 💦 Compatibilidad: *${compat}%*
 📛 Resultado: *${nivel}*
 
-🛏️ El bot recomienda:
+🛏️ Consejo del bot:
 ${compat > 70
-  ? 'Apagar las luces, cerrar la puerta y no hacer preguntas.'
+  ? 'Cierren la puerta y apaguen el celular.'
   : compat > 40
-  ? 'Un motel barato y alcohol.'
-  : 'Mejor cada quien por su lado.'}
+  ? 'Una noche, cero sentimientos.'
+  : 'Mejor ni lo intenten.'}
 
-😼 Luego no digan que el bot no avisó…
+😼 El bot solo observa…
 `.trim()
 
-  await conn.sendMessage(
+  // 📩 Enviar mensaje
+  let msg = await conn.sendMessage(
     m.chat,
     {
       text: texto,
@@ -52,11 +52,19 @@ ${compat > 70
     },
     { quoted: m }
   )
+
+  // 😈🔥 REACCIÓN AL MENSAJE
+  await conn.sendMessage(m.chat, {
+    react: {
+      text: compat > 70 ? '🔥' : compat > 40 ? '😈' : '💀',
+      key: msg.key
+    }
+  })
 }
 
-handler.help = ['formarpareja18']
+handler.help = ['formarpareja2']
 handler.tags = ['fun', 'adult']
-handler.command = ['formarpareja18', 'pareja18', 'ship18']
+handler.command = ['formarpareja2', 'pareja2', 'ship2']
 handler.group = true
 
 export default handler
