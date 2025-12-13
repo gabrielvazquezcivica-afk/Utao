@@ -1,7 +1,7 @@
 // fun-formarpareja.js (+18) CON REACCIÓN
 
 const handler = async (m, { conn, participants, isGroup }) => {
-  if (!isGroup) throw '❌ Este comando solo funciona en grupos.'
+  if (!m.isGroup) throw '❌ Este comando solo funciona en grupos.'
 
   let users = participants
     .map(u => u.id)
