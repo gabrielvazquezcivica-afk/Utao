@@ -1,7 +1,7 @@
 let handler = async (m, { conn, args, isAdmin, isGroup }) => {
 
     // Solo grupos
-    if (!isGroup)
+    if (!m.isGroup)
         return conn.reply(m.chat, '❌ Este comando solo funciona en grupos', m)
 
     // Solo admins
