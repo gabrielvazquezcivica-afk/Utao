@@ -29,15 +29,13 @@ var handler = async (m, { conn, participants, usedPrefix, command }) => {
     let nameWho = await conn.getName(who);
 
     await conn.sendMessage(m.chat, {
-        text:
+    text:
 `🚫 *Usuario expulsado del grupo*
 
 👤 *Expulsado:* @${target.split('@')[0]}
-🛠️ *Acción realizada por:* @${who.split('@')[0]}
-
-➥ *${nameTarget}* ha sido removido del grupo.`,
-        mentions: [target, who]
-    });
+🛠️ *Acción realizada por:* @${who.split('@')[0]}`,
+    mentions: [target, who]
+});
 
 };
 
