@@ -16,7 +16,7 @@ try {
     if (!user)
         return conn.reply(
             m.chat,
-            `🚩 *Etiqueta o responde a un usuario.*\n\nEjemplo:\n${usedPrefix}promote @usuario`,
+            `🚩 *Etiqueta o responde a un usuario.*\n\nEjemplo:\n${usedPrefix}${command} @usuario`,
             m
         );
 
@@ -32,12 +32,16 @@ try {
         return conn.reply(m.chat, '⚠️ *Ese usuario ya es admin.*', m);
 
     await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
+
+    const author = m.sender;
+
     await conn.reply(
         m.chat,
-        `✅ *Usuario promovido a admin*\n@${user.split("@")[0]}`,
+        `✅ *Usuario promovido a admin*\n\n👤 *Usuario:* @${user.split("@")[0]}\n🛡️ *Acción realizada por:* @${author.split("@")[0]}`,
         m,
-        { mentions: [user] }
+        { mentions: [user, author] }
     );
+
     await m.react('🎉');
 
 } catch (e) {
@@ -46,9 +50,9 @@ try {
 }
 };
 
-handler.help = ['promote'];
+handler.help = ['promote', 'daradmin'];
 handler.tags = ['group'];
-handler.command = ['promote'];
+handler.command = ['promote', 'daradmin']; // ← alias aquí
 
 // Requisitos
 handler.group = true;
