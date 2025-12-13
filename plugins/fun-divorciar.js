@@ -15,7 +15,7 @@ const saveParejas = (data) => {
 }
 
 const handler = async (m, { conn, isGroup }) => {
-  if (!m,isGroup) throw '❌ Este comando solo funciona en grupos.'
+  if (!m.isGroup) throw '❌ Este comando solo funciona en grupos.'
 
   // Reacción al comando
   await conn.sendMessage(m.chat, {
