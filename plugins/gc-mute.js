@@ -1,80 +1,88 @@
-// gc-mute.js
-
-let handler = async (m, { conn, args, isAdmin, usedPrefix }) => {
-    const command = m.command.toLowerCase();
-    const chat = m.chat;
+let handler = async (m, { conn, args, isAdmin, usedPrefix, command }) => {
+    const chat = m.chat
 
     if (!m.isGroup)
-        return conn.sendMessage(chat, { text: '❗ Este comando solo funciona en grupos.' });
+        return conn.sendMessage(chat, { text: '❗ Solo funciona en grupos.' })
 
     if (!isAdmin)
-        return conn.sendMessage(chat, { text: '❗ Solo los admins pueden usar este comando.' });
+        return conn.sendMessage(chat, { text: '❗ Solo admins pueden usar este comando.' })
 
-    // Obtener usuario objetivo
-    let target = m.mentionedJid?.[0] ||
-        (args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
+    let target =
+        m.mentionedJid?.[0] ||
+        (args[0] ? args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null)
 
     if (!target)
-        return conn.sendMessage(chat, { text: `Usa: ${usedPrefix}${command} @usuario`, quoted: m });
+        return conn.sendMessage(chat, {
+            text: `Usa: ${usedPrefix}${command} @usuario`,
+            quoted: m
+        })
 
-    // Asegurar base de datos
-    if (!global.db) global.db = {};
-    if (!global.db.muted) global.db.muted = {};
-    if (!global.db.muted[chat]) global.db.muted[chat] = {};
+    // Base de datos
+    global.db = global.db || {}
+    global.db.muted = global.db.muted || {}
+    global.db.muted[chat] = global.db.muted[chat] || {}
 
-    // --- MUTE ---
-    if (command === "mute") {
-        global.db.muted[chat][target] = true;
+    // ===== MUTE =====
+    if (command === 'mute') {
+        global.db.muted[chat][target] = true
+
         await conn.sendMessage(chat, {
-            text: `🔇 Usuario silenciado: @${target.split('@')[0]}`,
+            text: `🔇 *Usuario silenciado*\n@${target.split('@')[0]}`,
             mentions: [target]
-        });
-        await conn.sendMessage(chat, { react: { text: "🔇", key: m.key } });
+        })
+
+        await conn.sendMessage(chat, { react: { text: '🔇', key: m.key } })
     }
 
-    // --- UNMUTE ---
-    if (command === "unmute") {
-        delete global.db.muted[chat][target];
+    // ===== UNMUTE =====
+    if (command === 'unmute') {
+        delete global.db.muted[chat][target]
+
         await conn.sendMessage(chat, {
-            text: `🔈 Usuario desilenciado: @${target.split('@')[0]}`,
+            text: `🔈 *Usuario desilenciado*\n@${target.split('@')[0]}`,
             mentions: [target]
-        });
-        await conn.sendMessage(chat, { react: { text: "🔈", key: m.key } });
+        })
+
+        await conn.sendMessage(chat, { react: { text: '🔈', key: m.key } })
     }
+}
 
-};
-
-handler.help = ['mute @tag', 'unmute @tag'];
-handler.tags = ['group'];
-handler.command = /^mute|unmute$/i;
+handler.help = ['mute @tag', 'unmute @tag']
+handler.tags = ['group']
+handler.command = /^(mute|unmute)$/i
 
 // ============================================================
-// 📌 FILTRO GLOBAL "before": Elimina mensajes de usuarios muteados
+// 🔥 FILTRO GLOBAL: BORRA TODO MENSAJE DEL USUARIO MUTEADO
 // ============================================================
 
-handler.before = async function (m, { conn }) {
+handler.before = async function (m, { conn, isAdmin, isOwner }) {
     try {
-        const chat = m.chat;
-        const sender = m.sender;
+        if (!m.isGroup) return
+        if (m.fromMe) return
 
-        if (!global.db?.muted?.[chat]?.[sender]) return; // No está muteado, salir
+        const chat = m.chat
+        const sender = m.sender
 
-        // Verificar si el mensaje tiene key válida
-        if (!m.key || !m.key.id) return;
+        if (!global.db?.muted?.[chat]?.[sender]) return
 
-        // Borrado REAL compatible con Baileys v6–v7
+        // Admins y owner no se silencian
+        if (isAdmin || isOwner) return
+
+        // Evitar errores
+        if (!m.key?.id) return
+
         await conn.sendMessage(chat, {
             delete: {
                 remoteJid: chat,
                 fromMe: false,
                 id: m.key.id,
-                participant: m.key.participant || sender
+                participant: sender
             }
-        });
+        })
 
-    } catch (e) {
-        console.error('Error borrando mensaje de muteado:', e);
+    } catch (err) {
+        console.error('[MUTE ERROR]', err)
     }
-};
+}
 
-export default handler;
+export default handler
