@@ -4,27 +4,30 @@ let handler = async function (m, { conn }) {
   let chat = global.db.data.chats[m.chat];
   if (!chat || !chat.welcome) return;
 
-  let id = m.messageStubParameters?.[0];
-  if (!id) return;
+  let jid = m.messageStubParameters?.[0];
+  if (!jid) return;
 
-  let who = id + '@s.whatsapp.net';
-  let mention = `@${id}`;
+  // JID REAL (puede ser @lid o @s.whatsapp.net)
+  let who = jid.includes('@') ? jid : jid + '@s.whatsapp.net';
 
-  // FRASES PESADAS 🔥
+  // Para mención visible
+  let mention = '@' + who.split('@')[0];
+
+  // FRASES PESADAS 😈
   const welcomes = [
-    `🚨 ATENCIÓN 🚨 llegó alguien peligroso`,
-    `🎭 Nuevo personaje tóxico desbloqueado`,
-    `🔥 Agárrense, esto se va a poner feo`,
-    `🤡 Entró el que nadie pidió`,
-    `🧨 Alguien abrió la caja de Pandora`
+    `🚨 ALERTA 🚨 llegó alguien peligroso`,
+    `🔥 Nadie lo pidió, pero aquí está`,
+    `🤡 Nuevo personaje tóxico desbloqueado`,
+    `🧨 Esto se va a poner feo`,
+    `🎭 Se sumó otro problema al grupo`
   ];
 
   const byes = [
-    `🚪 Se fue sin pagar la renta`,
-    `💀 Abandonó la misión (cobarde)`,
-    `🪦 Aquí yació, no duró nada`,
+    `🚪 Se fue sin despedirse`,
+    `💀 Eliminado del servidor`,
+    `🪦 No duró ni el tutorial`,
     `💨 Huyó antes del desastre`,
-    `⚰️ Eliminado del servidor`
+    `⚰️ Cayó un soldado`
   ];
 
   let middleText =
@@ -34,7 +37,7 @@ let handler = async function (m, { conn }) {
 
   let title = m.messageStubType === 27 ? '🔥 BIENVENIDO 🔥' : '💀 DESPEDIDA 💀';
 
-  // CUADRO CON BORDES
+  // CUADRO
   let box = `
 ╔════════════════════════════╗
 ║        ${title}        ║
