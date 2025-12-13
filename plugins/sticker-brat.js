@@ -4,20 +4,22 @@ import { createCanvas } from 'canvas'
 
 let handler = async (m, { conn, text }) => { if (!text) throw '✏️ Escribe el texto para el sticker\nEjemplo: .brat Hola mundo'
 
-// Ajustes del canvas const size = 512 const canvas = createCanvas(size, size) const ctx = canvas.getContext('2d')
+const size = 512 const canvas = createCanvas(size, size) const ctx = canvas.getContext('2d')
 
 // Fondo ctx.fillStyle = '#111111' ctx.fillRect(0, 0, size, size)
 
-// Texto let fontSize = 64 ctx.fillStyle = '#ffffff' ctx.textAlign = 'center' ctx.textBaseline = 'middle'
+// Texto let fontSize = 80 ctx.fillStyle = '#ffffff' ctx.textAlign = 'center' ctx.textBaseline = 'middle'
 
-// Ajustar tamaño del texto automáticamente do { ctx.font = bold ${fontSize}px Sans fontSize -= 2 } while (ctx.measureText(text).width > size - 40)
+// Autoajuste de texto while (fontSize > 20) { ctx.font = bold ${fontSize}px Sans if (ctx.measureText(text).width < size - 40) break fontSize -= 4 }
 
 ctx.fillText(text, size / 2, size / 2, size - 40)
 
-// Convertir a buffer const buffer = canvas.toBuffer('image/png')
+const buffer = canvas.toBuffer()
 
-// Enviar sticker await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m }) }
+// Enviar como sticker (forma compatible con Baileys) await conn.sendImageAsSticker(m.chat, buffer, m, { packname: 'Brat Stickers', author: 'Bot' }) }
 
-handler.help = ['brat <texto>'] handler.tags = ['sticker'] handler.command = /^brat$/i
+handler.help = ['brat <texto>']
+handler.tags = ['sticker'] 
+handler.command = ['brat']
 
 export default handler
