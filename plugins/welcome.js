@@ -1,24 +1,22 @@
 import fetch from 'node-fetch'
 
-let handler = {}
-
-handler.on = async function ({ id, participants, action }, { conn }) {
+let handler = async function ({ id, participants, action }, { conn }) {
   let chat = global.db.data.chats[id]
-  if (!chat?.welcome) return
+  if (!chat || !chat.welcome) return
 
   for (let user of participants) {
 
-    let userJid = user.includes('@')
+    let userJid = user.endsWith('@s.whatsapp.net')
       ? user
-      : user + '@s.whatsapp.net'
+      : user.replace('@lid', '@s.whatsapp.net')
 
     let mention = '@' + userJid.split('@')[0]
 
-    // ====== AUDIOS ======
+    // ===== AUDIOS =====
     let audioWelcome = 'https://d.uguu.se/woNwUdOC.mp3'
     let audioBye = 'https://o.uguu.se/AGcyxnDN.mp3'
 
-    // ====== FOTO PERFIL ======
+    // ===== FOTO =====
     let ppUrl
     try {
       ppUrl = await conn.profilePictureUrl(userJid, 'image')
@@ -29,9 +27,8 @@ handler.on = async function ({ id, participants, action }, { conn }) {
     let ppBuffer = await (await fetch(ppUrl)).buffer()
     let name = await conn.getName(userJid)
 
-    // ===== MENSAJES =====
     const welcomes = [
-      `🩸 *Llegó otro error* 🩸\n${mention} entró… nadie lo pidió.`,
+      `🩸 *Otro error llegó* 🩸\n${mention} entró… nadie lo pidió.`,
       `👹 *Nuevo NPC* 👹\n${mention} piensa que aquí lo quieren.`,
       `💀 *Mala noticia* 💀\n${mention} acaba de entrar.`
     ]
@@ -44,7 +41,7 @@ handler.on = async function ({ id, participants, action }, { conn }) {
 
     let pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
-    // ===== ENTRADA =====
+    // ===== ENTRÓ =====
     if (action === 'add') {
       await conn.sendMessage(id, {
         text: pick(welcomes),
@@ -68,7 +65,7 @@ handler.on = async function ({ id, participants, action }, { conn }) {
       })
     }
 
-    // ===== SALIDA =====
+    // ===== SALIÓ / KICK =====
     if (action === 'remove') {
       await conn.sendMessage(id, {
         text: pick(byes),
@@ -93,5 +90,8 @@ handler.on = async function ({ id, participants, action }, { conn }) {
     }
   }
 }
+
+// 🔴 ESTA LÍNEA ES OBLIGATORIA
+handler.on = 'group-participants.update'
 
 export default handler
