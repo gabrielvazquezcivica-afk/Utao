@@ -1,99 +1,49 @@
-import baileys from '@whiskeysockets/baileys'
-const { WAMessageStubType } = baileys
+let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
+import fetch from 'node-fetch'
+import { readdirSync, unlinkSync, existsSync, promises as fs, rmSync } from 'fs'
+import path from 'path'
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 let handler = m => m
+handler.before = async function (m, { conn, participants, groupMetadata })
+{
 
-handler.before = async function (m, { conn, groupMetadata }) {
-  if (!m.isGroup || !m.messageStubType) return
+if (!m.messageStubType || !m.isGroup) return
+let usuario = `@${m.sender.split`@`[0]}`
+const groupName = groupMetadata.subject
+const groupAdmins = participants.filter((p) => p.admin)
 
-  const chat = global.db.data.chats[m.chat]
-  if (!chat?.detect) return
+let pp = await conn.profilePictureUrl(conn.user.jid).catch(_ => `${global.imagen1}`)
+const img = await (await fetch(pp)).buffer()
+const chat = global.db.data.chats[m.chat]
+const mentionsString = [m.sender, m.messageStubParameters[0], ...groupAdmins.map((v) => v.id)]
+const mentionsContentM = [m.sender, m.messageStubParameters[0]]
 
-  const actor = m.sender
-  const actorTag = `@${actor.split('@')[0]}`
-  const target = m.messageStubParameters?.[0]
-  const targetTag = target ? `@${target.split('@')[0]}` : ''
+if (chat.detect && m.messageStubType == 25) {
+await this.sendMessage(m.chat, { text: `🚩 *Ahora ${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden editar la información del grupo*`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
 
-  let text = ''
-  let mentions = [actor]
-  if (target) mentions.push(target)
+} else if (chat.detect && m.messageStubType == 26) {
+await this.sendMessage(m.chat, { text: `🚩 *El grupo ha sido ${m.messageStubParameters[0] == 'on' ? 'cerrado' : 'abierto'}*\n\n${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden enviar mensajes`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
 
-  switch (m.messageStubType) {
+} else if (chat.detect && m.messageStubType == 29) {
+let txt1 = `🚩 *Nuevo admin*\n\n`
+txt1 += `Nombre: @${m.messageStubParameters[0].split`@`[0]}\n`
+txt1 += `Le otorgó admin: @${m.sender.split`@`[0]}`
 
-    // 🔔 ABRIR / CERRAR GRUPO
-    case WAMessageStubType.GROUP_CHANGE_ANNOUNCE: {
-      const isClose = target === 'on'
-      text =
-`🚩 El grupo ha sido ${isClose ? 'cerrado' : 'abierto'}
-${isClose ? 'solo admins pueden enviar mensajes' : 'todos pueden enviar mensajes'}
+await conn.sendMessage(m.chat, {text: txt1, mentions: [...txt1.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), contextInfo: { mentionedJid: [...txt1.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), "externalAdReply": {"showAdAttribution": true, "containsAutoReply": true, "renderLargerThumbnail": true, "title": global.packname, "body": dev, "containsAutoReply": true, "mediaType": 1, "thumbnail": img, "mediaUrl": channel, "sourceUrl": channel}}})
 
-👤 Por: ${actorTag}`
-      break
-    }
+} else if (chat.detect && m.messageStubType == 30) {
+let txt2 = `🚩 *Un admin menos*\n\n`
+txt2 += `Nombre: @${m.messageStubParameters[0].split`@`[0]}\n`
+txt2 += `Le quitó admin: @${m.sender.split`@`[0]}`
 
-    // ⚙️ AJUSTES DEL GRUPO
-    case WAMessageStubType.GROUP_CHANGE_RESTRICT: {
-      text =
-`⚙️ Ajustes del grupo modificados
-${target === 'on' ? 'solo admins pueden editar la información' : 'todos pueden editar la información'}
-
-👤 Por: ${actorTag}`
-      break
-    }
-
-    // 👑 DAR ADMIN
-    case WAMessageStubType.GROUP_PARTICIPANT_PROMOTE: {
-      text =
-`👑 Nuevo administrador
-${targetTag}
-
-👤 Otorgado por: ${actorTag}`
-      break
-    }
-
-    // ❌ QUITAR ADMIN
-    case WAMessageStubType.GROUP_PARTICIPANT_DEMOTE: {
-      text =
-`❌ Administrador removido
-${targetTag}
-
-👤 Quitado por: ${actorTag}`
-      break
-    }
-
-    // ✏️ CAMBIO DE NOMBRE
-    case WAMessageStubType.GROUP_CHANGE_SUBJECT: {
-      text =
-`✏️ Nombre del grupo cambiado
-Nuevo nombre: *${groupMetadata.subject}*
-
-👤 Por: ${actorTag}`
-      break
-    }
-
-    // 🖼️ CAMBIO DE FOTO
-    case WAMessageStubType.GROUP_CHANGE_ICON: {
-      text =
-`🖼️ Foto del grupo actualizada
-
-👤 Por: ${actorTag}`
-      break
-    }
-
-    default:
-      return
-  }
-
-  // 🧹 BORRAR MENSAJE REAL DEL SISTEMA (opcional)
-  try {
-    await conn.sendMessage(m.chat, { delete: m.key })
-  } catch {}
-
-  // 📢 ENVIAR AVISO TIPO SISTEMA
-  await conn.sendMessage(m.chat, {
-    text,
-    mentions
-  })
-}
-
+await conn.sendMessage(m.chat, {text: txt2, mentions: [...txt2.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), contextInfo: { mentionedJid: [...txt2.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), "externalAdReply": {"showAdAttribution": true, "containsAutoReply": true, "renderLargerThumbnail": true, "title": 'HuTao-Proyect', "body": dev, "containsAutoReply": true, "mediaType": 1, "thumbnail": img, "mediaUrl": channel, "sourceUrl": channel}}})
+} else {
+/*if (m.messageStubType == 2) return
+console.log({messageStubType: m.messageStubType,
+messageStubParameters: m.messageStubParameters,
+type: WAMessageStubType[m.messageStubType], 
+})*/
+}}
 export default handler
