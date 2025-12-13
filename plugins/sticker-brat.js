@@ -5,7 +5,7 @@ import { sticker } from '../lib/sticker.js'
 
 let handler = async (m, { conn, text }) => {
   let txt = text || m.quoted?.text
-  if (!txt) return m.reply('✍️ Usa:\n.brat tamadre')
+  if (!txt) return m.reply('✍️ Usa:\n.brat Hola mundo')
 
   // 🔥 Reacción
   await conn.sendMessage(m.chat, {
