@@ -1,66 +1,50 @@
-let handler = async function (m, { conn }) {
+let WAMessageStubType = (await import('@whiskeysockets/baileys')).default;
+import fetch from 'node-fetch';
 
-  if (!m.isGroup) return
-  if (!m.messageStubType) return
+export async function before(m, { conn, participants, groupMetadata }) {
+  if (!m.messageStubType || !m.isGroup) return true;
 
-  let chat = global.db.data.chats[m.chat]
-  if (!chat || !chat.welcome) return
+  let vn = 'https://qu.ax/Jinc.mp3';
+  let vn2 = 'https://qu.ax/ujpr.mp3';
+  let chat = global.db.data.chats[m.chat];
+  const getMentionedJid = () => {
+    return m.messageStubParameters.map(param => `${param}@s.whatsapp.net`);
+  };
 
-  let raw = m.messageStubParameters?.[0]
-  if (!raw) return
+  let who = m.messageStubParameters[0] + '@s.whatsapp.net';
+  let user = global.db.data.users[who];
 
-  // 🔥 convertir @lid → jid normal
-  let userJid = raw.replace('@lid', '@s.whatsapp.net')
-  let mention = '@' + userJid.split('@')[0]
+  let userName = user ? user.name : await conn.getName(who);
 
-  // audios
-  let audioWelcome = 'https://d.uguu.se/woNwUdOC.mp3'
-  let audioBye = 'https://o.uguu.se/AGcyxnDN.mp3'
-
-  let name = await conn.getName(userJid)
-
-  const welcomes = [
-    `🩸 *Otro error llegó* 🩸\n${mention} entró… nadie lo pidió.`,
-    `👹 *Nuevo NPC detectado* 👹\n${mention} piensa que aquí importa.`,
-    `💀 *Mala noticia* 💀\n${mention} acaba de entrar.`
-  ]
-
-  const byes = [
-    `⚰️ *Buenas noticias* ⚰️\n${mention} se fue.`,
-    `🗑️ *Basura retirada* 🗑️\n${mention} salió del grupo.`,
-    `🔥 *Alivio total* 🔥\n${mention} ya no está aquí.`
-  ]
-
-  let pick = arr => arr[Math.floor(Math.random() * arr.length)]
-
-  // ===== ENTRÓ =====
-  if (m.messageStubType === 27) {
-    await conn.sendMessage(m.chat, {
-      text: pick(welcomes),
-      mentions: [userJid]
-    })
-
-    await conn.sendMessage(m.chat, {
-      audio: { url: audioWelcome },
-      ptt: true,
-      mimetype: 'audio/mpeg'
-    })
-  }
-
-  // ===== SALIÓ / KICK =====
-  if (m.messageStubType === 28 || m.messageStubType === 32) {
-    await conn.sendMessage(m.chat, {
-      text: pick(byes),
-      mentions: [userJid]
-    })
-
-    await conn.sendMessage(m.chat, {
-      audio: { url: audioBye },
-      ptt: true,
-      mimetype: 'audio/mpeg'
-    })
-  }
+ if (chat.welcome && m.messageStubType === 27) {
+    this.sendMessage(m.chat, { audio: { url: vn }, 
+    contextInfo: { forwardedNewsletterMessageInfo: { 
+    newsletterJid: channelRD.id, 
+    serverMessageId: '', 
+    newsletterName: channelRD.name }, forwardingScore: 9999999, isForwarded: true, mentionedJid: getMentionedJid(), "externalAdReply": { 
+    "title":`♡︎✿︎𝙱𝚒𝚎𝚗𝚟𝚎𝚗𝚒𝚍𝚘ꨄ︎ఌ︎`, 
+    "body": `${userName}`, 
+    "previewType": "PHOTO", 
+    "thumbnailUrl": null,
+    "thumbnail": icons, 
+    "sourceUrl": redes, 
+    "showAdAttribution": true}}, 
+     seconds: '4556', ptt: true, mimetype: 'audio/mpeg', fileName: `error.mp3` }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
 }
 
-handler.before = true
-export default handler
+  if (chat.welcome && (m.messageStubType === 28 || m.messageStubType === 32)) {
+    this.sendMessage(m.chat, { audio: { url: vn2 }, 
+    contextInfo: { forwardedNewsletterMessageInfo: { 
+    newsletterJid: channelRD.id, 
+    serverMessageId: '', 
+    newsletterName: channelRD.name }, forwardingScore: 9999999, isForwarded: true, mentionedJid: getMentionedJid(), "externalAdReply": { 
+    "title": `❀☹︎𝙰𝚍𝚒𝚘𝚜☹︎☯︎`, 
+    "body": `${userName}, se despide.`, 
+    "previewType": "PHOTO", 
+    "thumbnailUrl": null,
+    "thumbnail": icons, 
+    "sourceUrl": redes, 
+    "showAdAttribution": true}}, 
+     seconds: '4556', ptt: true, mimetype: 'audio/mpeg', fileName: `error.mp3` }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
+  }
+}
