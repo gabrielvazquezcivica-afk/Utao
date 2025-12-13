@@ -1,5 +1,9 @@
 let handler = async (m, { conn, participants, action }) => {
-  // 🔒 APAGADO TOTAL
+  // ESTE ARCHIVO NO USA handler normal
+}
+
+handler.before = async function (m, { conn, participants, action }) {
+  // 🔒 switch global welcome ON/OFF
   let chat = global.db.data.chats[m.chat]
   if (!chat || !chat.welcome) return
 
@@ -45,5 +49,4 @@ Fuera de *${groupName}*
   }
 }
 
-handler.group = true
 export default handler
