@@ -16,29 +16,41 @@ try {
     if (!user)
         return conn.reply(
             m.chat,
-            `🚩 *Etiqueta o responde a un usuario.*\n\nEjemplo:\n${usedPrefix}demote @usuario`,
+            `🚩 *Etiqueta o responde a un usuario.*\n\nEjemplo:\n${usedPrefix}${command} @usuario`,
             m
         );
 
-    // Anti auto-demote
+    // Evitar auto-demote
     if (user === m.sender)
         return conn.reply(m.chat, '❌ *No puedes quitarte admin a ti mismo.*', m);
 
     const groupMetadata = await conn.groupMetadata(m.chat);
-    const admins = groupMetadata.participants.filter(p => p.admin);
-    const isUserAdmin = admins.some(a => a.id === user);
 
-    if (!isUserAdmin)
+    const target = groupMetadata.participants.find(p => p.id === user);
+
+    // Protección del creador
+    if (target?.admin === 'superadmin')
+        return conn.reply(
+            m.chat,
+            '🚫 *No puedes quitarle admin al creador del grupo.*',
+            m
+        );
+
+    if (!target?.admin)
         return conn.reply(m.chat, '⚠️ *Ese usuario no es admin.*', m);
 
     await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
+
+    const author = m.sender;
+
     await conn.reply(
         m.chat,
-        `🟥 *Usuario degradado*\n@${user.split("@")[0]}`,
+        `❌ *Admin removido*\n\n👤 *Usuario:* @${user.split("@")[0]}\n🛡️ *Acción realizada por:* @${author.split("@")[0]}`,
         m,
-        { mentions: [user] }
+        { mentions: [user, author] }
     );
-    await m.react('📉');
+
+    await m.react('🧹');
 
 } catch (e) {
     console.log("ERROR GC-DEMOTE:", e);
@@ -46,11 +58,10 @@ try {
 }
 };
 
-handler.help = ['demote'];
+handler.help = ['demote', 'quitaradmin'];
 handler.tags = ['group'];
-handler.command = ['demote'];
+handler.command = ['demote', 'quitaradmin'];
 
-// Requisitos
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
