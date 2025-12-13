@@ -1,83 +1,83 @@
-let handler = async function (m, { conn }) {
-  if (!m.isGroup || !m.messageStubType) return;
+let handler = {}
 
-  let chat = global.db.data.chats[m.chat];
-  if (!chat || !chat.welcome) return;
+handler.before = async function (m, { conn }) {
+  // Solo grupos y eventos
+  if (!m.isGroup) return
+  if (!m.messageStubType) return
 
-  let jid = m.messageStubParameters?.[0];
-  if (!jid) return;
+  let chat = global.db.data.chats?.[m.chat]
+  if (!chat || !chat.welcome) return
 
-  // JID REAL (puede ser @lid o @s.whatsapp.net)
-  let who = jid.includes('@') ? jid : jid + '@s.whatsapp.net';
+  // JID real (puede ser @lid)
+  let who = m.messageStubParameters?.[0]
+  if (!who) return
 
-  // Para mención visible
-  let mention = '@' + who.split('@')[0];
+  let mention = '@' + who.split('@')[0]
 
   // FRASES PESADAS 😈
   const welcomes = [
-    `🚨 ALERTA 🚨 llegó alguien peligroso`,
-    `🔥 Nadie lo pidió, pero aquí está`,
-    `🤡 Nuevo personaje tóxico desbloqueado`,
-    `🧨 Esto se va a poner feo`,
-    `🎭 Se sumó otro problema al grupo`
-  ];
+    '🚨 Llegó alguien que nadie pidió',
+    '🔥 Se sumó otro problema al grupo',
+    '🤡 Nuevo payaso desbloqueado',
+    '🧨 Esto se va a poner feo',
+    '😈 Agárrense que llegó'
+  ]
 
   const byes = [
-    `🚪 Se fue sin despedirse`,
-    `💀 Eliminado del servidor`,
-    `🪦 No duró ni el tutorial`,
-    `💨 Huyó antes del desastre`,
-    `⚰️ Cayó un soldado`
-  ];
+    '🚪 Se fue sin avisar',
+    '💀 Eliminado del servidor',
+    '🪦 No sobrevivió al grupo',
+    '💨 Huyó antes del desastre',
+    '⚰️ Cayó otro soldado'
+  ]
 
-  let middleText =
+  let text =
     m.messageStubType === 27
       ? welcomes[Math.floor(Math.random() * welcomes.length)]
-      : byes[Math.floor(Math.random() * byes.length)];
+      : byes[Math.floor(Math.random() * byes.length)]
 
-  let title = m.messageStubType === 27 ? '🔥 BIENVENIDO 🔥' : '💀 DESPEDIDA 💀';
+  let title =
+    m.messageStubType === 27 ? '🔥 BIENVENIDO 🔥' : '💀 DESPEDIDA 💀'
 
-  // CUADRO
   let box = `
 ╔════════════════════════════╗
 ║        ${title}        ║
 ╠════════════════════════════╣
-║  ${middleText}
+║  ${text}
 ║
 ║  👤 ${mention}
 ╚════════════════════════════╝
-`.trim();
+`.trim()
 
-  // FOTO DE PERFIL (usuario → bot)
-  let pp;
+  // FOTO PERFIL
+  let pp
   try {
-    pp = await conn.profilePictureUrl(who, 'image');
+    pp = await conn.profilePictureUrl(who, 'image')
   } catch {
     try {
-      pp = await conn.profilePictureUrl(conn.user.jid, 'image');
+      pp = await conn.profilePictureUrl(conn.user.jid, 'image')
     } catch {
-      pp = null;
+      pp = null
     }
   }
 
-  // ENTRADA
+  // ENTRA
   if (m.messageStubType === 27) {
     await conn.sendMessage(m.chat, {
       image: pp ? { url: pp } : undefined,
       caption: box,
       mentions: [who]
-    });
+    })
   }
 
-  // SALIDA / EXPULSIÓN
+  // SALE / EXPULSADO
   if (m.messageStubType === 28 || m.messageStubType === 32) {
     await conn.sendMessage(m.chat, {
       image: pp ? { url: pp } : undefined,
       caption: box,
       mentions: [who]
-    });
+    })
   }
-};
+}
 
-handler.before = true;
-export default handler;
+export default handler
