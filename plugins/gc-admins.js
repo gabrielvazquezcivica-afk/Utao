@@ -1,10 +1,10 @@
-let handler = async (m, { conn, args, isAdmin, isGroup }) => {
+let handler = async (m, { conn, args, isAdmin }) => {
 
-    // Solo grupos
+    // Verificar grupo
     if (!m.isGroup)
         return conn.reply(m.chat, '❌ Este comando solo funciona en grupos', m)
 
-    // Solo admins
+    // Solo admins pueden usarlo
     if (!isAdmin)
         return conn.reply(m.chat, '🚫 Solo los administradores pueden usar este comando', m)
 
@@ -29,11 +29,13 @@ let handler = async (m, { conn, args, isAdmin, isGroup }) => {
     if (!admins.length)
         return conn.reply(m.chat, '❌ No hay administradores en este grupo', m)
 
-    // Mensaje personalizado
+    // Mensaje del usuario
     const textUser = args.join(' ') || 'Se requiere su atención ⚠️'
 
-    // Texto de menciones
-    const mentionsText = admins.map(a => `@${a.split('@')[0]}`).join(' ')
+    // Lista numerada de admins
+    let adminList = admins.map((a, i) => 
+        `${i + 1}. @${a.split('@')[0]}`
+    ).join('\n')
 
     // Foto del grupo
     let pp
@@ -43,7 +45,7 @@ let handler = async (m, { conn, args, isAdmin, isGroup }) => {
         pp = 'https://i.imgur.com/7D7I6dI.png'
     }
 
-    // Mensaje final
+    // Texto final
     const caption = `
 📢 *LLAMADO A ADMINS*
 👥 *Grupo:* ${groupName}
@@ -52,7 +54,7 @@ let handler = async (m, { conn, args, isAdmin, isGroup }) => {
 ${textUser}
 
 👑 *Administradores:*
-${mentionsText}
+${adminList}
 `.trim()
 
     // Enviar mensaje
