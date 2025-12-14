@@ -1,6 +1,10 @@
 let queue = []
 let processing = false
 
+async function wait(ms) {
+  return new Promise(r => setTimeout(r, ms))
+}
+
 async function processQueue(conn) {
   if (processing || queue.length === 0) return
   processing = true
@@ -8,9 +12,6 @@ async function processQueue(conn) {
   const { m, text, participants } = queue.shift()
 
   try {
-    // Reacción 🚨
-    await conn.sendMessage(m.chat, { react: { text: "🚨", key: m.key } })
-
     const users = participants.map(u => u.id)
 
     const botName = conn.getName(conn.user.jid)
@@ -22,10 +23,8 @@ async function processQueue(conn) {
     ]
 
     const date = new Date()
-    const finalDate = `${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`
-    const footer = `\n\n> ${botName} — ${finalDate}`
+    const footer = `\n\n> ${botName} — ${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`
 
-    // ⚠️ Validación
     if (!text && !m.quoted) {
       await conn.reply(
         m.chat,
@@ -36,30 +35,25 @@ async function processQueue(conn) {
       return processQueue(conn)
     }
 
-    // 🧩 dividir mentions en bloques seguros
-    const chunkSize = 30
+    // 🔐 mentions ULTRA seguras
+    const chunkSize = 20
     const chunks = []
     for (let i = 0; i < users.length; i += chunkSize) {
       chunks.push(users.slice(i, i + chunkSize))
     }
 
-    // 📤 envío secuencial
     for (const chunk of chunks) {
 
       let msg = {}
 
       if (text && !m.quoted) {
-        msg = {
-          text: text + footer,
-          mentions: chunk
-        }
+        msg = { text: text + footer, mentions: chunk }
       }
 
       if (m.quoted) {
         const q = m.quoted
-        const mime = q.mtype
 
-        switch (mime) {
+        switch (q.mtype) {
           case 'audioMessage':
             msg = {
               audio: await q.download(),
@@ -100,10 +94,24 @@ async function processQueue(conn) {
         }
       }
 
-      await conn.sendMessage(m.chat, msg, { quoted: m })
+      let sent = false
+      let tries = 0
 
-      // 🐢 delay invisible (anti 429)
-      await new Promise(r => setTimeout(r, 1800))
+      while (!sent && tries < 3) {
+        try {
+          await conn.sendMessage(m.chat, msg, { quoted: m })
+          sent = true
+        } catch (e) {
+          if (String(e).includes('rate-overlimit')) {
+            await wait(4000) // 🧯 enfriar WhatsApp
+            tries++
+          } else {
+            throw e
+          }
+        }
+      }
+
+      await wait(3500) // 🐢 delay REAL seguro
     }
 
   } catch (e) {
@@ -116,10 +124,7 @@ async function processQueue(conn) {
 
 const handler = async (m, { conn, text, participants }) => {
   if (!participants || participants.length < 2) return
-
-  // ➕ se agrega en orden
   queue.push({ m, text, participants })
-
   processQueue(conn)
 }
 
