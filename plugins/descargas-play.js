@@ -13,7 +13,8 @@ if (!search?.videos?.length) return m.reply('No se encontraron resultados.');
 const videoInfo = search.videos[0];
 const { title, thumbnail, timestamp, views, ago, url, author } = videoInfo;
 
-const thumb = (await conn.getFile(thumbnail)).data;
+// thumbnail opcional eliminado para máxima compatibilidad
+const thumb = null;
 
 const botName = conn.user?.name || 'MI BOT';
 
@@ -22,20 +23,8 @@ const mensaje = `*╭─⬣「 🚀 ${botName} 」⬣─╮*
 ┃ 🎧 Título: ${title} ┃ ⏱️ Duración: ${timestamp} ┃ 👁️ Vistas: ${views.toLocaleString()} ┃ 👤 Canal: ${author?.name || 'Desconocido'} ┃ 📅 Publicado: ${ago || '—'} ┃ 🔗 Link: ${url} ╰─⬣━━━━━━━━━━━━⬣─╯`;
 
 // Mensaje informativo (no bloqueante)
-conn.reply(m.chat, mensaje, m, {
-  contextInfo: {
-    externalAdReply: {
-      title: title,
-      body: "YouTube Audio",
-      mediaType: 1,
-      previewType: 0,
-      mediaUrl: url,
-      sourceUrl: url,
-      thumbnail: thumb,
-      renderLargerThumbnail: true
-    }
-  }
-});
+// Mensaje informativo simple (sin externalAdReply para evitar fallos)
+await conn.reply(m.chat, mensaje, m);
 
 // ⚡ PLAY / MP3 – MÁXIMA VELOCIDAD
 if (['play', 'yta', 'mp3', 'ytmp3', 'playaudio'].includes(command)) {
