@@ -23,22 +23,8 @@ const mentionsContentM = [m.sender, m.messageStubParameters[0]]
 if (chat.detect && m.messageStubType == 25) {
 await this.sendMessage(m.chat, { text: `🚩 *Ahora ${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden editar la información del grupo*`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
 
-} else if (chat.detect && m.messageStubType == 26) {
-
-let user = m.sender
-let name = conn.getName(user) || user.split('@')[0]
-
-await conn.sendMessage(m.chat, {
-    text: `🚩 *El grupo ha sido ${m.messageStubParameters[0] == 'on' ? 'cerrado' : 'abierto'}*\n\n` +
-          `${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden enviar mensajes\n\n` +
-          `👤 *Acción realizada por:* ${name}`,
-    mentions: [user]
-}, {
-    quoted: fkontak,
-    ephemeralExpiration: 24 * 60 * 100,
-    disappearingMessagesInChat: 24 * 60 * 100
-})
-}
+} else if (chat.detect && m.messageStubType == 26) {  
+await this.sendMessage(m.chat, { text: `🚩 *El grupo ha sido ${m.messageStubParameters[0] == 'on' ? 'cerrado' : 'abierto'}*\n\n${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden enviar mensajes`,`👤 *Acción realizada por:* ${name}`, `mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})  
   
 } else if (chat.detect && m.messageStubType == 29) {
 let txt1 = `🚩 *Nuevo admin*\n\n`
