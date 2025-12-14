@@ -1,104 +1,105 @@
-const handler = async (m, { conn, text, participants }) => {
+// code traído por Xi_Crew (modificado)
+// Reply visible al ejecutor del comando
 
-  // Reacción
-  await conn.sendMessage(m.chat, {
-    react: { text: "🚨", key: m.key }
-  })
+import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
+import * as fs from 'fs'
 
-  // Usuarios del grupo
-  const users = participants.map(u => u.id)
+var handler = async (m, { conn, text, participants }) => {
 
-  // Nombre del bot
-  const botName = conn.getName(conn.user.jid)
+if (!m.quoted && !text) 
+return conn.reply(m.chat, `🚩 Ingrese un texto`, m)
 
-  // Meses con emoji
-  const monthNames = [
-    'Enero ❄️', 'Febrero ❤️', 'Marzo 🌱', 'Abril 🌧️',
-    'Mayo 🌼', 'Junio ☀️', 'Julio 🔥', 'Agosto 🌞',
-    'Septiembre 🍂', 'Octubre 🎃', 'Noviembre 🍁', 'Diciembre 🎄'
-  ]
+try {
 
-  const date = new Date()
-  const finalDate = `${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`
-  const footer = `\n\n> ${botName} — ${finalDate}`
+let users = participants.map(u => conn.decodeJid(u.id))
+let q = m.quoted ? m.quoted : m
+let c = m.quoted ? await m.getQuotedObj() : m.msg
 
-  // Validación
-  if (!text && !m.quoted) {
-    return conn.reply(
-      m.chat,
-      '*⚠️ Escribe un mensaje o responde a uno para usar este comando.*',
-      m
-    )
-  }
+let msg = conn.cMod(
+m.chat,
+generateWAMessageFromContent(
+m.chat,
+{
+[m.quoted ? q.mtype : 'extendedTextMessage']:
+m.quoted ? c.message[q.mtype] : { text: '' }
+},
+{ quoted: m, userJid: conn.user.id }
+),
+text || q.text,
+conn.user.jid,
+{ mentions: users }
+)
 
-  // TEXTO NORMAL
-  if (text && !m.quoted) {
-    return conn.sendMessage(
-      m.chat,
-      {
-        text: text + footer,
-        mentions: users
-      },
-      { quoted: m }
-    )
-  }
+await conn.relayMessage(
+m.chat,
+msg.message,
+{ messageId: msg.key.id }
+)
 
-  // RESPONDIENDO A MENSAJE
-  if (m.quoted) {
-    const q = m.quoted
-    const mime = q.mtype
-    let msg = {}
+} catch {
 
-    switch (mime) {
+let users = participants.map(u => conn.decodeJid(u.id))
+let quoted = m.quoted ? m.quoted : m
+let mime = (quoted.msg || quoted).mimetype || ''
+let isMedia = /image|video|sticker|audio/.test(mime)
 
-      case 'imageMessage':
-        msg = {
-          image: await q.download(),
-          caption: (text || q.text || '') + footer,
-          mentions: users
-        }
-        break
+let more = String.fromCharCode(8206)
+let masss = more.repeat(850)
+let htextos = text ? text : '*Hola!!*'
 
-      case 'videoMessage':
-        msg = {
-          video: await q.download(),
-          caption: (text || q.text || '') + footer,
-          mentions: users
-        }
-        break
+if (isMedia && quoted.mtype === 'imageMessage') {
+let media = await quoted.download()
+return conn.sendMessage(
+m.chat,
+{ image: media, caption: htextos, mentions: users },
+{ quoted: m }
+)
 
-      case 'audioMessage':
-        msg = {
-          audio: await q.download(),
-          mimetype: 'audio/mp4',
-          ptt: false, // ❌ NO PTT
-          mentions: users
-        }
-        break
+} else if (isMedia && quoted.mtype === 'videoMessage') {
+let media = await quoted.download()
+return conn.sendMessage(
+m.chat,
+{ video: media, mimetype: 'video/mp4', caption: htextos, mentions: users },
+{ quoted: m }
+)
 
-      case 'stickerMessage':
-        msg = {
-          sticker: await q.download(),
-          mentions: users
-        }
-        break
+} else if (isMedia && quoted.mtype === 'audioMessage') {
+let media = await quoted.download()
+return conn.sendMessage(
+m.chat,
+{ audio: media, mimetype: 'audio/mp4', fileName: 'Hidetag.mp3' },
+{ quoted: m }
+)
 
-      default:
-        msg = {
-          text: (text || q.text || '') + footer,
-          mentions: users
-        }
-        break
-    }
+} else if (isMedia && quoted.mtype === 'stickerMessage') {
+let media = await quoted.download()
+return conn.sendMessage(
+m.chat,
+{ sticker: media, mentions: users },
+{ quoted: m }
+)
 
-    return conn.sendMessage(m.chat, msg, { quoted: m })
-  }
+} else {
+return conn.relayMessage(
+m.chat,
+{
+extendedTextMessage: {
+text: `${masss}\n${htextos}\n`,
+contextInfo: {
+mentionedJid: users
+}
+}
+},
+{ quoted: m }
+)
+}
+
+}
 }
 
 handler.help = ['hidetag']
-handler.tags = ['group']
-handler.command = /^(hidetag|ht|notificar|notify|tag)$/i
-handler.group = true
+handler.tags = ['grupo']
+handler.command = ['hidetag', 'notificar', 'notify', 'tag', 'n']
 handler.admin = true
 
 export default handler
