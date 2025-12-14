@@ -15,9 +15,11 @@ const { title, thumbnail, timestamp, views, ago, url, author } = videoInfo;
 
 const thumb = (await conn.getFile(thumbnail)).data;
 
-const mensaje = `*╭─⬣「 🚀 ${conn.user?.name || 'MI BOT'} 」⬣─╮*
+const botName = conn.user?.name || 'MI BOT';
 
-┃ 🎧 Título: ${title} ┃ ⏱️ Duración: ${timestamp} ┃ 👁️ Vistas: ${views.toLocaleString()} ┃ 👤 Canal: ${author?.name || 'Desconocido'} ┃ 📅 Publicado: ${ago || '—'} ┃ 🎚️ Calidad de audio: MP3 • 128 kbps • Stereo ┃ ⚡ Modo: Ultra rápido ┃ 🔗 Link: ${url} ╰─⬣━━━━━━━━━━━━⬣─╯`;
+const mensaje = `*╭─⬣「 🚀 ${botName} 」⬣─╮*
+
+┃ 🎧 Título: ${title} ┃ ⏱️ Duración: ${timestamp} ┃ 👁️ Vistas: ${views.toLocaleString()} ┃ 👤 Canal: ${author?.name || 'Desconocido'} ┃ 📅 Publicado: ${ago || '—'} ┃ 🔗 Link: ${url} ╰─⬣━━━━━━━━━━━━⬣─╯`;
 
 // Mensaje informativo (no bloqueante)
 conn.reply(m.chat, mensaje, m, {
