@@ -68,9 +68,7 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
     })
 
     return conn.sendMessage(m.chat, {
-      text:
-        `${emoji} *${text}*\n\n` +
-        `🎄 @${user.split('@')[0]}`,
+      text: `${emoji} *${text}*\n\n🎄 @${user.split('@')[0]}`,
       mentions: [user]
     })
   }
@@ -89,16 +87,16 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
   })
 
   return conn.sendMessage(m.chat, {
-    text:
-      `${emoji} *${text}*\n\n` +
-      `☃️ @${user.split('@')[0]}`,
+    text: `${emoji} *${text}*\n\n☃️ @${user.split('@')[0]}`,
     mentions: [user]
   })
 }
 
-// ❄️ BORRADO AUTOMÁTICO
-handler.before = async (m, { conn }) => {
+// ❄️ BORRADO AUTOMÁTICO (CORREGIDO)
+handler.before = async (m, { conn, isBotAdmin }) => {
   if (!m.isGroup) return
+  if (!isBotAdmin) return
+  if (m.fromMe) return
 
   let data = loadMuted()
   let muted = data[m.chat] || []
@@ -107,12 +105,7 @@ handler.before = async (m, { conn }) => {
 
   try {
     await conn.sendMessage(m.chat, {
-      delete: {
-        remoteJid: m.chat,
-        fromMe: false,
-        id: m.key.id,
-        participant: m.sender
-      }
+      delete: m.key
     })
   } catch {}
 
