@@ -17,14 +17,10 @@ const ddownr = {
 
     if (!res.data?.success) throw new Error("Error al procesar.");
 
-    const { id, title, info } = res.data;
+    const { id, info } = res.data;
     const downloadUrl = await ddownr.cekProgress(id);
 
-    return {
-      title,
-      image: info.image,
-      downloadUrl
-    };
+    return { downloadUrl };
   },
 
   cekProgress: async (id) => {
@@ -51,7 +47,6 @@ const handler = async (m, { conn, text, command }) => {
     const thumb = (await conn.getFile(thumbnail)).data;
     const vistaTexto = formatViews(views);
 
-    // 🔮 DISEÑO FUTURISTA
     const mensaje = `
 ┌─〔 ⚡ ${global.botname || conn.user?.name || 'CYBER-BOT'} ⚡ 〕─┐
 │ 🎶 𝗧𝗥𝗔𝗖𝗞
@@ -79,7 +74,7 @@ const handler = async (m, { conn, text, command }) => {
       contextInfo: {
         externalAdReply: {
           title: global.botname || "CYBER PLAYER",
-          body: "Ultra Fast Audio",
+          body: "Fast Audio",
           mediaType: 1,
           mediaUrl: url,
           sourceUrl: url,
@@ -89,7 +84,7 @@ const handler = async (m, { conn, text, command }) => {
       }
     });
 
-    // 🚀 AUDIO ULTRA INSTANTÁNEO + REACCIONES
+    // ▶ AUDIO NORMAL OPTIMIZADO + REACCIONES
     if (['play', 'yta', 'mp3', 'ytmp3', 'playaudio'].includes(command)) {
 
       // ⏳ Reacción cargando
@@ -102,9 +97,12 @@ const handler = async (m, { conn, text, command }) => {
 
         await conn.sendMessage(m.chat, {
           audio: { url: api.downloadUrl },
-          mimetype: 'audio/ogg; codecs=opus',
-          ptt: true,
-          waveform: Array(40).fill(40)
+          mimetype: 'audio/mpeg',
+          ptt: false,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: false
+          }
         }, { quoted: m });
 
         // ⚡ Reacción listo
@@ -119,12 +117,10 @@ const handler = async (m, { conn, text, command }) => {
 
         await conn.sendMessage(m.chat, {
           audio: { url: api.data.dl },
-          mimetype: 'audio/ogg; codecs=opus',
-          ptt: true,
-          waveform: Array(40).fill(40)
+          mimetype: 'audio/mpeg',
+          ptt: false
         }, { quoted: m });
 
-        // ⚡ Reacción listo (fallback)
         await conn.sendMessage(m.chat, {
           react: { text: "⚡", key: m.key }
         });
@@ -141,31 +137,6 @@ const handler = async (m, { conn, text, command }) => {
       }, { quoted: m });
     }
 
-    // 🎬 VIDEO
-    else if (['play2','ytv','mp4','play4','ytvdoc','play2doc','ytmp4doc'].includes(command)) {
-      const fuentes = [
-        `https://api.stellarwa.xyz/dl/ytmp4?url=${url}&quality=720&key=proyectsV2`,
-        `https://api.sylphy.xyz/download/ytmp4?url=${url}&apikey=sylphy-8ff8`
-      ];
-
-      for (let f of fuentes) {
-        try {
-          const r = await fetch(f).then(r => r.json());
-          const dl = r.data?.dl || r.res?.url;
-          if (!dl) continue;
-
-          await conn.sendMessage(m.chat, {
-            video: { url: dl },
-            mimetype: 'video/mp4',
-            caption: "🎬 Video listo",
-            thumbnail: thumb
-          }, { quoted: m });
-          return;
-        } catch {}
-      }
-      m.reply("No se pudo descargar el video.");
-    }
-
   } catch (e) {
     console.error(e);
     m.reply("❌ Error inesperado.");
@@ -173,9 +144,8 @@ const handler = async (m, { conn, text, command }) => {
 };
 
 handler.command = handler.help = [
-  'play','play2','mp3','yta','mp4','ytv',
-  'play3','ytadoc','playdoc','ytmp3doc',
-  'play4','ytvdoc','play2doc','ytmp4doc'
+  'play','mp3','yta','ytmp3','playaudio',
+  'play3','ytadoc','playdoc','ytmp3doc'
 ];
 
 handler.tags = ['downloader'];
@@ -185,4 +155,4 @@ function formatViews(v) {
   return v >= 1000
     ? `${(v / 1000).toFixed(1)}k (${v.toLocaleString()})`
     : v.toString();
-        }
+}
