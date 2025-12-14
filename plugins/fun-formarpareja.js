@@ -50,6 +50,6 @@ ${porcentaje > 70 ? '🔥 Amor verdadero' :
 
 handler.help = ['formarpareja']
 handler.tags = ['fun']
-handler.command = ['formarpareja', 'pareja', 'ship']
+handler.command = ['formarpareja', 'pareja']
 
 export default handler
