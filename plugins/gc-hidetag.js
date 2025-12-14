@@ -36,7 +36,7 @@ async function processQueue(conn) {
     }
 
     // 🔐 mentions ULTRA seguras
-    const chunkSize = 20
+    const chunkSize = 25
     const chunks = []
     for (let i = 0; i < users.length; i += chunkSize) {
       chunks.push(users.slice(i, i + chunkSize))
@@ -111,7 +111,7 @@ async function processQueue(conn) {
         }
       }
 
-      await wait(3500) // 🐢 delay REAL seguro
+      await wait(2200) // 🐢 delay REAL seguro
     }
 
   } catch (e) {
