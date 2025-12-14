@@ -31,8 +31,6 @@ let m = chatUpdate.messages[chatUpdate.messages.length - 1]
 try { m = smsg(this, m) || m } catch { if (!m) return }
 if (!m)
   return
-let groupMetadata = {};
-let groupMetadata = {};
 for(let o = 0; o < 10; o++){try{ groupMetadata = await this.groupMetadata(m.chat); break;}catch{}};
 if (global.db.data == null)
 await global.loadDatabase();
