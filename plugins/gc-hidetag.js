@@ -1,117 +1,132 @@
-const handler = async (m, { conn, text, participants }) => {
+let queue = []
+let processing = false
 
-  // Reacción 🚨
-  await conn.sendMessage(m.chat, { react: { text: "🚨", key: m.key } });
+async function processQueue(conn) {
+  if (processing || queue.length === 0) return
+  processing = true
 
-  const users = participants.map(u => u.id);
+  const { m, text, participants } = queue.shift()
 
-  // Obtener nombre del bot
-  const botName = conn.getName(conn.user.jid);
+  try {
+    // Reacción 🚨
+    await conn.sendMessage(m.chat, { react: { text: "🚨", key: m.key } })
 
-  // Meses con emoji (puedes cambiar los emojis)
-  const monthNames = [
-    'Enero ❄️',
-    'Febrero ❤️',
-    'Marzo 🌱',
-    'Abril 🌧️',
-    'Mayo 🌼',
-    'Junio ☀️',
-    'Julio 🔥',
-    'Agosto 🌞',
-    'Septiembre 🍂',
-    'Octubre 🎃',
-    'Noviembre 🍁',
-    'Diciembre 🎄'
-  ];
+    const users = participants.map(u => u.id)
 
-  const date = new Date();
-  const dayNum   = date.getDate();
-  const monthTxt = monthNames[date.getMonth()];
-  const year     = date.getFullYear();
+    const botName = conn.getName(conn.user.jid)
 
-  const finalDate = `${dayNum} de ${monthTxt} de ${year}`;
+    const monthNames = [
+      'Enero ❄️', 'Febrero ❤️', 'Marzo 🌱', 'Abril 🌧️',
+      'Mayo 🌼', 'Junio ☀️', 'Julio 🔥', 'Agosto 🌞',
+      'Septiembre 🍂', 'Octubre 🎃', 'Noviembre 🍁', 'Diciembre 🎄'
+    ]
 
-  const footer = `\n\n> ${botName} — ${finalDate}`;
+    const date = new Date()
+    const finalDate = `${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`
+    const footer = `\n\n> ${botName} — ${finalDate}`
 
-  // Si no hay texto y no se respondió a nada
-  if (!text && !m.quoted) {
-    return conn.reply(
-      m.chat,
-      '*⚠️ Debes escribir un mensaje o responder a uno para usar este comando.*',
-      m
-    );
-  }
-
-  // Mandar texto si no es respuesta
-  if (text && !m.quoted) {
-    return conn.sendMessage(
-      m.chat,
-      {
-        text: text + footer,
-        mentions: users
-      },
-      { quoted: m }
-    );
-  }
-
-  // Si está respondiendo
-  if (m.quoted) {
-    const q = m.quoted;
-    const mime = q.mtype;
-
-    let msg = {};
-
-    switch (mime) {
-
-      case 'audioMessage':
-        msg = {
-          audio: await q.download(),
-          ptt: q.ptt || false,
-          mimetype: 'audio/mp4',
-          mentions: users
-        };
-        break;
-
-      case 'imageMessage':
-        msg = {
-          image: await q.download(),
-          caption: (q.text || text || '') + footer,
-          mentions: users
-        };
-        break;
-
-      case 'videoMessage':
-        msg = {
-          video: await q.download(),
-          caption: (q.text || text || '') + footer,
-          mentions: users
-        };
-        break;
-
-      case 'stickerMessage':
-        msg = {
-          sticker: await q.download(),
-          mentions: users
-        };
-        break;
-
-      default:
-        msg = {
-          text: (q.text || text || '') + footer,
-          mentions: users
-        };
-        break;
+    // ⚠️ Validación
+    if (!text && !m.quoted) {
+      await conn.reply(
+        m.chat,
+        '*⚠️ Debes escribir un mensaje o responder a uno para usar este comando.*',
+        m
+      )
+      processing = false
+      return processQueue(conn)
     }
 
-    return conn.sendMessage(m.chat, msg, { quoted: m });
+    // 🧩 dividir mentions en bloques seguros
+    const chunkSize = 30
+    const chunks = []
+    for (let i = 0; i < users.length; i += chunkSize) {
+      chunks.push(users.slice(i, i + chunkSize))
+    }
+
+    // 📤 envío secuencial
+    for (const chunk of chunks) {
+
+      let msg = {}
+
+      if (text && !m.quoted) {
+        msg = {
+          text: text + footer,
+          mentions: chunk
+        }
+      }
+
+      if (m.quoted) {
+        const q = m.quoted
+        const mime = q.mtype
+
+        switch (mime) {
+          case 'audioMessage':
+            msg = {
+              audio: await q.download(),
+              ptt: q.ptt || false,
+              mimetype: 'audio/mp4',
+              mentions: chunk
+            }
+            break
+
+          case 'imageMessage':
+            msg = {
+              image: await q.download(),
+              caption: (q.text || text || '') + footer,
+              mentions: chunk
+            }
+            break
+
+          case 'videoMessage':
+            msg = {
+              video: await q.download(),
+              caption: (q.text || text || '') + footer,
+              mentions: chunk
+            }
+            break
+
+          case 'stickerMessage':
+            msg = {
+              sticker: await q.download(),
+              mentions: chunk
+            }
+            break
+
+          default:
+            msg = {
+              text: (q.text || text || '') + footer,
+              mentions: chunk
+            }
+        }
+      }
+
+      await conn.sendMessage(m.chat, msg, { quoted: m })
+
+      // 🐢 delay invisible (anti 429)
+      await new Promise(r => setTimeout(r, 1800))
+    }
+
+  } catch (e) {
+    console.error('HIDETAG ERROR:', e)
   }
 
-};
+  processing = false
+  processQueue(conn)
+}
 
-handler.help = ['hidetag'];
-handler.tags = ['group'];
-handler.command = /^(hidetag|ht|n)$/i;
-handler.group = true;
-handler.admin = true;
+const handler = async (m, { conn, text, participants }) => {
+  if (!participants || participants.length < 2) return
 
-export default handler;
+  // ➕ se agrega en orden
+  queue.push({ m, text, participants })
+
+  processQueue(conn)
+}
+
+handler.help = ['hidetag']
+handler.tags = ['group']
+handler.command = /^(hidetag|ht|n)$/i
+handler.group = true
+handler.admin = true
+
+export default handler
