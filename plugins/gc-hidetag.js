@@ -1,137 +1,53 @@
-let queue = []
-let processing = false
+//code traído por Xi_Crew
+import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
+import * as fs from 'fs'
 
-async function wait(ms) {
-  return new Promise(r => setTimeout(r, ms))
+var handler = async (m, { conn, text, participants, isOwner, isAdmin }) => {
+
+if (!m.quoted && !text) return conn.reply(m.chat, `🚩 Ingrese un texto`, m, rcanal)
+
+try { 
+
+let users = participants.map(u => conn.decodeJid(u.id))
+let q = m.quoted ? m.quoted : m || m.text || m.sender
+let c = m.quoted ? await m.getQuotedObj() : m.msg || m.text || m.sender
+let msg = conn.cMod(m.chat, generateWAMessageFromContent(m.chat, { [m.quoted ? q.mtype : 'extendedTextMessage']: m.quoted ? c.message[q.mtype] : { text: '' || c }}, { quoted: null, userJid: conn.user.id }), text || q.text, conn.user.jid, { mentions: users })
+await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+
+} catch {  
+
+/**
+[ By @NeKosmic || https://github.com/NeKosmic/ ]
+**/  
+
+let users = participants.map(u => conn.decodeJid(u.id))
+let quoted = m.quoted ? m.quoted : m
+let mime = (quoted.msg || quoted).mimetype || ''
+let isMedia = /image|video|sticker|audio/.test(mime)
+let more = String.fromCharCode(8206)
+let masss = more.repeat(850)
+let htextos = `${text ? text : "*Hola!!*"}`
+if ((isMedia && quoted.mtype === 'imageMessage') && htextos) {
+var mediax = await quoted.download?.()
+conn.sendMessage(m.chat, { image: mediax, mentions: users, caption: htextos, mentions: users }, { quoted: null })
+} else if ((isMedia && quoted.mtype === 'videoMessage') && htextos) {
+var mediax = await quoted.download?.()
+conn.sendMessage(m.chat, { video: mediax, mentions: users, mimetype: 'video/mp4', caption: htextos }, { quoted: null })
+} else if ((isMedia && quoted.mtype === 'audioMessage') && htextos) {
+var mediax = await quoted.download?.()
+conn.sendMessage(m.chat, { audio: mediax, mentions: users, mimetype: 'audio/mp4', fileName: `Hidetag.mp3` }, { quoted: null })
+} else if ((isMedia && quoted.mtype === 'stickerMessage') && htextos) {
+var mediax = await quoted.download?.()
+conn.sendMessage(m.chat, {sticker: mediax, mentions: users}, { quoted: null })
+} else {
+await conn.relayMessage(m.chat, {extendedTextMessage:{text: `${masss}\n${htextos}\n`, ...{ contextInfo: { mentionedJid: users, externalAdReply: { thumbnail: icons, sourceUrl: redes }}}}}, {})
+}}
+
 }
-
-async function processQueue(conn) {
-  if (processing || queue.length === 0) return
-  processing = true
-
-  const { m, text, participants } = queue.shift()
-
-  try {
-    const users = participants.map(u => u.id)
-
-    const botName = conn.getName(conn.user.jid)
-
-    const monthNames = [
-      'Enero ❄️', 'Febrero ❤️', 'Marzo 🌱', 'Abril 🌧️',
-      'Mayo 🌼', 'Junio ☀️', 'Julio 🔥', 'Agosto 🌞',
-      'Septiembre 🍂', 'Octubre 🎃', 'Noviembre 🍁', 'Diciembre 🎄'
-    ]
-
-    const date = new Date()
-    const footer = `\n\n> ${botName} — ${date.getDate()} de ${monthNames[date.getMonth()]} de ${date.getFullYear()}`
-
-    if (!text && !m.quoted) {
-      await conn.reply(
-        m.chat,
-        '*⚠️ Debes escribir un mensaje o responder a uno para usar este comando.*',
-        m
-      )
-      processing = false
-      return processQueue(conn)
-    }
-
-    // 🔐 mentions ULTRA seguras
-    const chunkSize = 25
-    const chunks = []
-    for (let i = 0; i < users.length; i += chunkSize) {
-      chunks.push(users.slice(i, i + chunkSize))
-    }
-
-    for (const chunk of chunks) {
-
-      let msg = {}
-
-      if (text && !m.quoted) {
-        msg = { text: text + footer, mentions: chunk }
-      }
-
-      if (m.quoted) {
-        const q = m.quoted
-
-        switch (q.mtype) {
-          case 'audioMessage':
-            msg = {
-              audio: await q.download(),
-              ptt: q.ptt || false,
-              mimetype: 'audio/mp4',
-              mentions: chunk
-            }
-            break
-
-          case 'imageMessage':
-            msg = {
-              image: await q.download(),
-              caption: (q.text || text || '') + footer,
-              mentions: chunk
-            }
-            break
-
-          case 'videoMessage':
-            msg = {
-              video: await q.download(),
-              caption: (q.text || text || '') + footer,
-              mentions: chunk
-            }
-            break
-
-          case 'stickerMessage':
-            msg = {
-              sticker: await q.download(),
-              mentions: chunk
-            }
-            break
-
-          default:
-            msg = {
-              text: (q.text || text || '') + footer,
-              mentions: chunk
-            }
-        }
-      }
-
-      let sent = false
-      let tries = 0
-
-      while (!sent && tries < 3) {
-        try {
-          await conn.sendMessage(m.chat, msg, { quoted: m })
-          sent = true
-        } catch (e) {
-          if (String(e).includes('rate-overlimit')) {
-            await wait(4000) // 🧯 enfriar WhatsApp
-            tries++
-          } else {
-            throw e
-          }
-        }
-      }
-
-      await wait(2200) // 🐢 delay REAL seguro
-    }
-
-  } catch (e) {
-    console.error('HIDETAG ERROR:', e)
-  }
-
-  processing = false
-  processQueue(conn)
-}
-
-const handler = async (m, { conn, text, participants }) => {
-  if (!participants || participants.length < 2) return
-  queue.push({ m, text, participants })
-  processQueue(conn)
-}
-
 handler.help = ['hidetag']
-handler.tags = ['group']
-handler.command = /^(hidetag|ht|n)$/i
-handler.group = true
+handler.tags = ['grupo']
+handler.command = ['hidetag', 'notificar', 'notify', 'tag']
+
 handler.admin = true
 
 export default handler
