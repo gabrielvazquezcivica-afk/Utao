@@ -24,7 +24,7 @@ const unmuteTexts = [
 
 const random = (arr) => arr[Math.floor(Math.random() * arr.length)]
 
-// 📁 Crear DB si no existe
+// 📁 Crear DB
 if (!fs.existsSync(DB_PATH)) {
   fs.mkdirSync('./database', { recursive: true })
   fs.writeFileSync(DB_PATH, JSON.stringify({}))
@@ -33,6 +33,7 @@ if (!fs.existsSync(DB_PATH)) {
 const loadMuted = () => JSON.parse(fs.readFileSync(DB_PATH))
 const saveMuted = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
 
+// 🎅 COMANDO
 let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
   if (!m.isGroup) return
   if (!isAdmin) return
@@ -76,8 +77,8 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
   })
 }
 
-// ❄️❄️❄️ BORRADO AUTOMÁTICO (FORMA CORRECTA) ❄️❄️❄️
-handler.before = async (m, { conn, isBotAdmin }) => {
+// ❄️❄️❄️ BORRADO AUTOMÁTICO — HUTAO ❄️❄️❄️
+handler.all = async (m, { conn, isBotAdmin }) => {
   if (!m.isGroup) return
   if (!isBotAdmin) return
   if (m.fromMe) return
@@ -90,18 +91,9 @@ handler.before = async (m, { conn, isBotAdmin }) => {
 
   try {
     await conn.sendMessage(m.chat, {
-      delete: {
-        remoteJid: m.chat,
-        fromMe: false,
-        id: m.key.id,
-        participant: m.key.participant || m.sender
-      }
+      delete: m.key
     })
-  } catch (e) {
-    console.log('Error borrando:', e)
-  }
-
-  return true
+  } catch {}
 }
 
 handler.help = ['mute', 'unmute']
