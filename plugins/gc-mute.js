@@ -2,29 +2,7 @@ import fs from 'fs'
 
 const DB_PATH = './database/muted-users.json'
 
-// 🎄 Emojis y textos random
-const muteEmojis = ['❄️','☃️','🎄','🥶','🌨️','🧊']
-const unmuteEmojis = ['🎁','✨','🎄','🧑‍🎄','⭐','🔔']
-
-const muteTexts = [
-  'Silencio cubierto de nieve',
-  'Santa pidió silencio',
-  'Modo invierno activado',
-  'El frío llegó al chat',
-  'Duendes trabajando en silencio'
-]
-
-const unmuteTexts = [
-  'La magia volvió al chat',
-  'Regalo navideño entregado',
-  'Santa devolvió la voz',
-  'Campanas sonando de nuevo',
-  'El espíritu navideño habló'
-]
-
-const random = (arr) => arr[Math.floor(Math.random() * arr.length)]
-
-// 📁 Crear DB
+// Crear DB si no existe
 if (!fs.existsSync(DB_PATH)) {
   fs.mkdirSync('./database', { recursive: true })
   fs.writeFileSync(DB_PATH, JSON.stringify({}))
@@ -33,7 +11,7 @@ if (!fs.existsSync(DB_PATH)) {
 const loadMuted = () => JSON.parse(fs.readFileSync(DB_PATH))
 const saveMuted = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
 
-// 🎅 COMANDO
+// ================= COMANDO =================
 let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
   if (!m.isGroup) return
   if (!isAdmin) return
@@ -46,38 +24,34 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
   let group = m.chat
   data[group] = data[group] || []
 
-  // 🎁 UNMUTE
+  // 🔓 UNMUTE
   if (/unmute/i.test(m.text)) {
     data[group] = data[group].filter(u => u !== user)
     saveMuted(data)
 
-    const e = random(unmuteEmojis)
-    const t = random(unmuteTexts)
-
-    await conn.sendMessage(m.chat, { react: { text: e, key: m.key } })
     return conn.sendMessage(m.chat, {
-      text: `${e} *${t}*\n\n@${user.split('@')[0]}`,
+      text:
+        `✅ *Usuario desmuteado:* @${user.split('@')[0]}\n\n` +
+        `🔔 Ahora puede enviar mensajes nuevamente.`,
       mentions: [user]
     })
   }
 
-  // ❄️ MUTE
+  // 🔒 MUTE
   if (!data[group].includes(user))
     data[group].push(user)
 
   saveMuted(data)
 
-  const e = random(muteEmojis)
-  const t = random(muteTexts)
-
-  await conn.sendMessage(m.chat, { react: { text: e, key: m.key } })
   return conn.sendMessage(m.chat, {
-    text: `${e} *${t}*\n\n@${user.split('@')[0]}`,
+    text:
+      `✅ *Usuario muteado:* @${user.split('@')[0]}\n\n` +
+      `⚠️ Ahora se eliminarán sus mensajes automáticamente`,
     mentions: [user]
   })
 }
 
-// ❄️❄️❄️ BORRADO AUTOMÁTICO — HUTAO ❄️❄️❄️
+// ================= BORRADO REAL (HuTao) =================
 handler.all = async (m, { conn, isBotAdmin }) => {
   if (!m.isGroup) return
   if (!isBotAdmin) return
