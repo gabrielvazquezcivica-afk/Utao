@@ -28,9 +28,24 @@ if (!chatUpdate)
 return
 this.pushMessage(chatUpdate.messages).catch(console.error)
 let m = chatUpdate.messages[chatUpdate.messages.length - 1]
-try{m = smsg(this, m) || m;}catch{ if(!m) return };
+try { m = smsg(this, m) || m } catch { if (!m) return }
 if (!m)
-return
+  return
+
+// 🔒 BORRADO INMEDIATO DE USUARIOS MUTEADOS (CORE)
+if (m.isGroup && !m.fromMe && m.key?.id) {
+  let userDB = global.db.data.users[m.sender]
+  if (userDB?.muto === true) {
+    try {
+      await this.sendMessage(m.chat, {
+        delete: m.key
+      })
+    } catch {}
+    return
+  }
+}
+
+let groupMetadata = {};
 let groupMetadata = {};
 for(let o = 0; o < 10; o++){try{ groupMetadata = await this.groupMetadata(m.chat); break;}catch{}};
 if (global.db.data == null)
@@ -533,17 +548,6 @@ this.msgqueque.splice(quequeIndex, 1)
 //console.log(global.db.data.users[m.sender])
 let user
 let stats = global.db.data.stats || (global.db.data.stats = {})
-if (m) { let utente = global.db.data.users[m.sender]
-if (utente.muto == true) {
-let bang = m.key.id
-let cancellazzione = m.key.participant
-for(let i = 0; i < 5; i++){try{await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: cancellazzione }})}catch{}}}
-if (m.sender && (user = global.db.data.users[m.sender])) {
-user.exp += m.exp
-user.moras -= m.moras * 1
-user.money -= m.money * 1
-}
-
 let stat
 if (m.plugin) {
 let now = +new Date
