@@ -4,20 +4,25 @@ var handler = async (m, { conn, text, participants }) => {
 
 let users = participants.map(u => conn.decodeJid(u.id))
 
-if (!text && !m.quoted)
-return conn.reply(m.chat, '🚩 Ingrese un texto o responda a un mensaje', m)
+// Detectar media en el mismo mensaje o citado
+let quoted = m.quoted || m
+let mime = (quoted.msg || quoted).mimetype || ''
+let isMedia = /image|video|audio|sticker/.test(mime)
 
-let quoted = m.quoted
-let mime = quoted ? (quoted.msg || quoted).mimetype || '' : ''
+// ❌ Si no hay texto ni media
+if (!text && !isMedia) {
+return conn.reply(
+m.chat,
+'✏️ Debes escribir un texto',
+m
+)
+}
 
 try {
 
-// ================= SI HAY MENSAJE RESPONDIDO
-if (quoted) {
-let media = await quoted.download()
-
-// STICKER
+// ================= STICKER
 if (quoted.mtype === 'stickerMessage') {
+let media = await quoted.download()
 return conn.sendMessage(
 m.chat,
 {
@@ -28,8 +33,9 @@ contextInfo: { mentionedJid: users }
 )
 }
 
-// IMAGEN
+// ================= IMAGEN
 if (/image/.test(mime)) {
+let media = await quoted.download()
 return conn.sendMessage(
 m.chat,
 {
@@ -41,8 +47,9 @@ contextInfo: { mentionedJid: users }
 )
 }
 
-// VIDEO
+// ================= VIDEO
 if (/video/.test(mime)) {
+let media = await quoted.download()
 return conn.sendMessage(
 m.chat,
 {
@@ -54,8 +61,9 @@ contextInfo: { mentionedJid: users }
 )
 }
 
-// AUDIO
+// ================= AUDIO
 if (/audio/.test(mime)) {
+let media = await quoted.download()
 return conn.sendMessage(
 m.chat,
 {
@@ -65,7 +73,6 @@ contextInfo: { mentionedJid: users }
 },
 { quoted: m }
 )
-}
 }
 
 // ================= SOLO TEXTO
@@ -95,7 +102,7 @@ console.error(e)
 
 handler.help = ['n']
 handler.tags = ['grupo']
-handler.command = ['n', 'hidetag', 'notify', 'tag']
+handler.command = ['n']
 handler.admin = true
 
 export default handler
