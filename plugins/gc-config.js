@@ -1,31 +1,34 @@
-let handler = async (m, { conn, args, command }) => {
+let handler = async (m, { conn, args, command, isAdmin }) => {  
 
-  let isClose = {
-    'open': 'not_announcement',
-    'abrir': 'not_announcement',
-    'close': 'announcement',
-    'cerrar': 'announcement'
-  }[(args[0] || command)]
+  if (!isAdmin)
+    return m.reply('🎄❌ *Ho ho ho…* Solo los **elfos administradores** pueden abrir o cerrar el taller 🎅✨')
 
-  if (!isClose) return
+  let isClose = {  
+    'open': 'not_announcement',  
+    'abrir': 'not_announcement',  
+    'close': 'announcement',  
+    'cerrar': 'announcement'  
+  }[(args[0] || command)]  
 
-  // 🔖 marcar que viene de comando
-  conn._groupCmd = conn._groupCmd || {}
-  conn._groupCmd[m.chat] = Date.now()
+  if (!isClose) return  
 
-  await conn.groupSettingUpdate(m.chat, isClose)
+  // 🔖 marcar que viene de comando  
+  conn._groupCmd = conn._groupCmd || {}  
+  conn._groupCmd[m.chat] = Date.now()  
 
-  // 👉 solo reacción
-  await conn.sendMessage(m.chat, {
-    react: {
-      text: isClose === 'announcement' ? '🔐' : '🔓',
-      key: m.key
-    }
-  })
-}
+  await conn.groupSettingUpdate(m.chat, isClose)  
 
-handler.command = ['group', 'grupo', 'abrir', 'cerrar']
-handler.admin = true
-handler.botAdmin = true
+  // 👉 solo reacción  
+  await conn.sendMessage(m.chat, {  
+    react: {  
+      text: isClose === 'announcement' ? '🔐🎄' : '🔓🎄',  
+      key: m.key  
+    }  
+  })  
+}  
+
+handler.command = ['group', 'grupo', 'abrir', 'cerrar']  
+handler.admin = true  
+handler.botAdmin = true  
 
 export default handler
