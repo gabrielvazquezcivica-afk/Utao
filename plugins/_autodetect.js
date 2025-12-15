@@ -11,23 +11,20 @@ export default function autodetecNavidad(conn) {
         const chat = global.db.data.chats[update.id]
         if (!chat || !chat.detect) continue
 
-        // 🎅 Imagen navideña
         const santaImgUrl = global.navidadImg || 'https://i.imgur.com/9QO4K8K.png'
         const img = await (await fetch(santaImgUrl)).buffer()
 
         const texto = update.announce
           ? `🎄🔒 *¡HO HO HO!* 🔒🎄
 
-El espíritu navideño ha decidido
-que el grupo descanse un momento ❄️
+El grupo ha entrado en modo descanso ❄️
+Santa ha cerrado la conversación 🎅
 
-🎅 *Solo los administradores*
-pueden enviar mensajes ahora`
-
+✨ *Solo administradores pueden escribir*`
           : `🎄🔓 *¡FELIZ NAVIDAD!* 🔓🎄
 
-Santa ha vuelto a abrir el grupo 🎁
-y la conversación continúa ✨
+Santa ha abierto el grupo 🎁
+La charla puede continuar ✨
 
 🎅 *Todos pueden enviar mensajes*`
 
@@ -64,12 +61,12 @@ y la conversación continúa ✨
       let texto = ''
 
       if (anu.action === 'promote') {
-        texto = `🎄🎅 *¡NUEVO GUARDIÁN NAVIDEÑO!* 🎅🎄
+        texto = `🎄🎅 *¡NUEVO ADMIN NAVIDEÑO!* 🎅🎄
 
 @${user.split('@')[0]}
 ha sido elegido por Santa ✨
 
-🛷 Ahora protege la paz del grupo`
+🛷 Ahora cuida el grupo`
       }
 
       if (anu.action === 'demote') {
@@ -78,7 +75,7 @@ ha sido elegido por Santa ✨
 @${user.split('@')[0]}
 deja su gorro de admin 🎅
 
-🎁 Gracias por ayudar al grupo`
+🎁 Gracias por tu apoyo`
       }
 
       if (!texto) return
@@ -105,50 +102,6 @@ deja su gorro de admin 🎅
 
     } catch (e) {
       console.log('Error autodetect admin:', e)
-    }
-  })
-}      if (!chat || !chat.detect) return
-
-      const user = anu.participants[0]
-      let texto = ''
-
-      if (anu.action === 'promote') {
-        texto = `🎄🎅 *NUEVO ADMIN* 🎅🎄
-
-👤 @${user.split('@')[0]}
-✨ Protege el espíritu navideño`
-      }
-
-      if (anu.action === 'demote') {
-        texto = `❄️🎄 *ADMIN REMOVIDO* 🎄❄️
-
-👤 @${user.split('@')[0]}
-🎅 Gracias por tu apoyo`
-      }
-
-      if (!texto) return
-
-      let pp = await conn.profilePictureUrl(user, 'image').catch(() => null)
-      let img = pp ? await (await fetch(pp)).buffer() : null
-
-      await conn.sendMessage(anu.id, {
-        text: texto,
-        mentions: [user],
-        contextInfo: img ? {
-          externalAdReply: {
-            showAdAttribution: true,
-            renderLargerThumbnail: true,
-            title: '🎄 ' + (global.packname || 'Bot'),
-            body: 'Espíritu Navideño Activado',
-            mediaType: 1,
-            thumbnail: img,
-            sourceUrl: global.channel || ''
-          }
-        } : {}
-      })
-
-    } catch (e) {
-      console.log('Error _autodetec admin:', e)
     }
   })
 }
