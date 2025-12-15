@@ -1,69 +1,35 @@
-const handler = async (m, { conn, participants, usedPrefix, command }) => {
-try {
+const handler = async (m, { conn }) => {
+  try {
+    if (!m.isGroup) return
 
-    command = (command || "").toLowerCase();
-
-    if (!m.isGroup)
-        return conn.reply(m.chat, '❗ *Este comando solo funciona en grupos.*', m);
-
-    // Usuario objetivo
     let user = m.mentionedJid[0]
-        ? m.mentionedJid[0]
-        : m.quoted
-            ? m.quoted.sender
-            : null;
+      ? m.mentionedJid[0]
+      : m.quoted
+        ? m.quoted.sender
+        : null
 
-    if (!user)
-        return conn.reply(
-            m.chat,
-            `🚩 *Etiqueta o responde a un usuario.*\n\nEjemplo:\n${usedPrefix}${command} @usuario`,
-            m
-        );
+    if (!user) return
+    if (user === m.sender) return
 
-    // Evitar auto-demote
-    if (user === m.sender)
-        return conn.reply(m.chat, '❌ *No puedes quitarte admin a ti mismo.*', m);
+    const metadata = await conn.groupMetadata(m.chat)
+    const target = metadata.participants.find(p => p.id === user)
 
-    const groupMetadata = await conn.groupMetadata(m.chat);
+    if (!target?.admin) return
+    if (target.admin === 'superadmin') return
 
-    const target = groupMetadata.participants.find(p => p.id === user);
+    await conn.groupParticipantsUpdate(m.chat, [user], 'demote')
 
-    // Protección del creador
-    if (target?.admin === 'superadmin')
-        return conn.reply(
-            m.chat,
-            '🚫 *No puedes quitarle admin al creador del grupo.*',
-            m
-        );
+    // ❄️ reacción navideña
+    await m.react('❄️')
 
-    if (!target?.admin)
-        return conn.reply(m.chat, '⚠️ *Ese usuario no es admin.*', m);
-
-    await conn.groupParticipantsUpdate(m.chat, [user], 'demote');
-
-    const author = m.sender;
-
-    await conn.reply(
-        m.chat,
-        `❌ *Admin removido*\n\n👤 *Usuario:* @${user.split("@")[0]}\n🛡️ *Acción realizada por:* @${author.split("@")[0]}`,
-        m,
-        { mentions: [user, author] }
-    );
-
-    await m.react('🧹');
-
-} catch (e) {
-    console.log("ERROR GC-DEMOTE:", e);
-    return conn.reply(m.chat, '❌ *Ocurrió un error*', m);
+  } catch (e) {
+    console.log('DEMOTE ERROR:', e)
+  }
 }
-};
 
-handler.help = ['demote', 'quitaradmin'];
-handler.tags = ['group'];
-handler.command = ['demote', 'quitaradmin'];
+handler.command = ['demote', 'quitaradmin']
+handler.group = true
+handler.admin = true
+handler.botAdmin = true
 
-handler.group = true;
-handler.admin = true;
-handler.botAdmin = true;
-
-export default handler;
+export default handler
