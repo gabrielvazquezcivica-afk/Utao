@@ -14,21 +14,21 @@ handler.before = async function (m, { conn }) {
 
   let mention = '@' + who.split('@')[0]
 
-  // FRASES PESADAS 😈
+  // FRASES NAVIDEÑAS 🎄
   const welcomes = [
-    '🚨 Llegó alguien que nadie pidió',
-    '🔥 Se sumó otro problema al grupo',
-    '🤡 Nuevo payaso desbloqueado',
-    '🧨 Esto se va a poner feo',
-    '😈 Agárrense que llegó'
+    '🎅 Llegó un regalo inesperado',
+    '🎄 Santa dejó a alguien nuevo aquí',
+    '❄️ Se suma otro al espíritu navideño',
+    '🎁 Nuevo invitado a la posada',
+    '✨ La magia navideña trae a'
   ]
 
   const byes = [
-    '🚪 Se fue sin avisar',
-    '💀 Eliminado del servidor',
-    '🪦 No sobrevivió al grupo',
-    '💨 Huyó antes del desastre',
-    '⚰️ Cayó otro soldado'
+    '🎄 Se fue antes de la posada',
+    '❄️ Santa se lo llevó del grupo',
+    '🎁 El regalo regresó al Polo Norte',
+    '🌨️ Desapareció entre la nieve',
+    '🕯️ Cerró el año fuera del grupo'
   ]
 
   let text =
@@ -37,11 +37,11 @@ handler.before = async function (m, { conn }) {
       : byes[Math.floor(Math.random() * byes.length)]
 
   let title =
-    m.messageStubType === 27 ? '🔥 BIENVENIDO 🔥' : '💀 DESPEDIDA 💀'
+    m.messageStubType === 27 ? '🎄 BIENVENIDO NAVIDEÑO 🎄' : '❄️ DESPEDIDA NAVIDEÑA ❄️'
 
   let box = `
 ╔════════════════════════════╗
-║        ${title}        ║
+║     ${title}     ║
 ╠════════════════════════════╣
 ║  ${text}
 ║
