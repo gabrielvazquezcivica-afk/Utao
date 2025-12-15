@@ -2,106 +2,83 @@ import fetch from 'node-fetch'
 
 export default function autodetecNavidad(conn) {
 
-  // ───── ABRIR / CERRAR GRUPO
-  conn.ev.on('groups.update', async (updates) => {
-    for (const update of updates) {
+  conn.ev.on('messages.upsert', async ({ messages }) => {
+    for (const m of messages) {
       try {
-        if (!update.id || update.announce === undefined) continue
+        if (!m.messageStubType || !m.key.remoteJid.endsWith('@g.us')) continue
 
-        const chat = global.db.data.chats[update.id]
+        const chatId = m.key.remoteJid
+        const chat = global.db.data.chats[chatId]
         if (!chat || !chat.detect) continue
 
         const santaImgUrl = global.navidadImg || 'https://i.imgur.com/9QO4K8K.png'
         const img = await (await fetch(santaImgUrl)).buffer()
 
-        const texto = update.announce
-          ? `🎄🔒 *¡HO HO HO!* 🔒🎄
+        // 🔒 ABRIR / CERRAR GRUPO
+        if (m.messageStubType === 26) {
+          const cerrado = m.messageStubParameters?.[0] === 'on'
 
-El grupo ha entrado en modo descanso ❄️
-Santa ha cerrado la conversación 🎅
+          const texto = cerrado
+            ? `🎄🔒 *¡HO HO HO!* 🔒🎄
 
-✨ *Solo administradores pueden escribir*`
-          : `🎄🔓 *¡FELIZ NAVIDAD!* 🔓🎄
+Santa ha cerrado el grupo ❄️
+Solo administradores pueden escribir 🎅`
+            : `🎄🔓 *¡FELIZ NAVIDAD!* 🔓🎄
 
 Santa ha abierto el grupo 🎁
-La charla puede continuar ✨
+Todos pueden enviar mensajes ✨`
 
-🎅 *Todos pueden enviar mensajes*`
-
-        await conn.sendMessage(update.id, {
-          text: texto,
-          contextInfo: {
-            externalAdReply: {
-              showAdAttribution: true,
-              renderLargerThumbnail: true,
-              title: 'WhatsApp • Estado',
-              body: update.announce
-                ? 'El grupo ha sido cerrado'
-                : 'El grupo ha sido abierto',
-              mediaType: 1,
-              thumbnail: img,
-              sourceUrl: global.channel || ''
+          await conn.sendMessage(chatId, {
+            text: texto,
+            contextInfo: {
+              externalAdReply: {
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                title: 'WhatsApp • Estado',
+                body: cerrado
+                  ? 'El grupo ha sido cerrado'
+                  : 'El grupo ha sido abierto',
+                mediaType: 1,
+                thumbnail: img,
+                sourceUrl: global.channel || ''
+              }
             }
-          }
-        })
+          })
+        }
+
+        // ✏️ SOLO ADMINS EDITAN INFO
+        if (m.messageStubType === 25) {
+          const soloAdmins = m.messageStubParameters?.[0] === 'on'
+
+          const texto = soloAdmins
+            ? `🎄🔒 *Modo navideño activado* 🎄
+
+🎅 Solo administradores
+pueden editar la info del grupo`
+            : `🎄✨ *Modo libre activado* ✨🎄
+
+🎁 Todos pueden editar
+la info del grupo`
+
+          await conn.sendMessage(chatId, {
+            text: texto,
+            contextInfo: {
+              externalAdReply: {
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                title: 'WhatsApp • Estado',
+                body: 'Configuración del grupo',
+                mediaType: 1,
+                thumbnail: img,
+                sourceUrl: global.channel || ''
+              }
+            }
+          })
+        }
 
       } catch (e) {
-        console.log('Error autodetect grupo:', e)
+        console.log('Error autodetect stub:', e)
       }
-    }
-  })
-
-  // ───── PROMOVER / QUITAR ADMIN
-  conn.ev.on('group-participants.update', async (anu) => {
-    try {
-      const chat = global.db.data.chats[anu.id]
-      if (!chat || !chat.detect) return
-
-      const user = anu.participants[0]
-      let texto = ''
-
-      if (anu.action === 'promote') {
-        texto = `🎄🎅 *¡NUEVO ADMIN NAVIDEÑO!* 🎅🎄
-
-@${user.split('@')[0]}
-ha sido elegido por Santa ✨
-
-🛷 Ahora cuida el grupo`
-      }
-
-      if (anu.action === 'demote') {
-        texto = `❄️🎄 *CAMBIO NAVIDEÑO* 🎄❄️
-
-@${user.split('@')[0]}
-deja su gorro de admin 🎅
-
-🎁 Gracias por tu apoyo`
-      }
-
-      if (!texto) return
-
-      const santaImgUrl = global.navidadImg || 'https://i.imgur.com/9QO4K8K.png'
-      const img = await (await fetch(santaImgUrl)).buffer()
-
-      await conn.sendMessage(anu.id, {
-        text: texto,
-        mentions: [user],
-        contextInfo: {
-          mentionedJid: [user],
-          externalAdReply: {
-            showAdAttribution: true,
-            renderLargerThumbnail: true,
-            title: 'WhatsApp • Estado',
-            body: 'Actualización navideña del grupo',
-            mediaType: 1,
-            thumbnail: img,
-            sourceUrl: global.channel || ''
-          }
-        }
-      })
-
-    } catch (e) {
-      console.log('Error autodetect admin:', e)
     }
   })
 }
