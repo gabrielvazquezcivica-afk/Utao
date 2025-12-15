@@ -1,6 +1,9 @@
-const handler = async (m, { conn }) => {
+const handler = async (m, { conn, isAdmin }) => {
   try {
     if (!m.isGroup) return
+
+    if (!isAdmin)
+      return m.reply('🎄❌ *Hey, reno curioso* 🦌\nSolo los **admins del Polo Norte** pueden quitar el gorro de admin 🎅')
 
     let user = m.mentionedJid[0]
       ? m.mentionedJid[0]
