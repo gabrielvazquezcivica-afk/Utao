@@ -1,49 +1,81 @@
-let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
 import fetch from 'node-fetch'
-import { readdirSync, unlinkSync, existsSync, promises as fs, rmSync } from 'fs'
-import path from 'path'
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+export default function autodetecNavidad(conn) {
 
-let handler = m => m
-handler.before = async function (m, { conn, participants, groupMetadata })
-{
+  // ───── ABRIR / CERRAR GRUPO
+  conn.ev.on('groups.update', async (updates) => {
+    for (const update of updates) {
+      try {
+        if (!update.id || update.announce === undefined) continue
 
-if (!m.messageStubType || !m.isGroup) return
-let usuario = `@${m.sender.split`@`[0]}`
-const groupName = groupMetadata.subject
-const groupAdmins = participants.filter((p) => p.admin)
+        const chat = global.db.data.chats[update.id]
+        if (!chat || !chat.detect) continue
 
-let pp = await conn.profilePictureUrl(conn.user.jid).catch(_ => `${global.imagen1}`)
-const img = await (await fetch(pp)).buffer()
-const chat = global.db.data.chats[m.chat]
-const mentionsString = [m.sender, m.messageStubParameters[0], ...groupAdmins.map((v) => v.id)]
-const mentionsContentM = [m.sender, m.messageStubParameters[0]]
+        let texto = update.announce
+          ? `🎄❄️ *GRUPO CERRADO* ❄️🎄
 
-if (chat.detect && m.messageStubType == 25) {
-await this.sendMessage(m.chat, { text: `🚩 *Ahora ${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden editar la información del grupo*`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
+🔒 Solo administradores pueden escribir
+🎅 Modo navideño activado`
 
-acción } else if (chat.detect && m.messageStubType == 26) {  
-await this.sendMessage(m.chat, { text: `🚩 *El grupo ha sido ${m.messageStubParameters[0] == 'on' ? 'cerrado' : 'abierto'}*\n\n${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden enviar mensajes`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})  
+          : `🎄✨ *GRUPO ABIERTO* ✨🎄
 
-} else if (chat.detect && m.messageStubType == 29) {
-let txt1 = `🚩 *Nuevo admin*\n\n`
-txt1 += `Nombre: @${m.messageStubParameters[0].split`@`[0]}\n`
-txt1 += `Le otorgó admin: @${m.sender.split`@`[0]}`
+🔓 Todos pueden escribir
+🎁 Feliz conversación navideña`
 
-await conn.sendMessage(m.chat, {text: txt1, mentions: [...txt1.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), contextInfo: { mentionedJid: [...txt1.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), "externalAdReply": {"showAdAttribution": true, "containsAutoReply": true, "renderLargerThumbnail": true, "title": global.packname, "body": dev, "containsAutoReply": true, "mediaType": 1, "thumbnail": img, "mediaUrl": channel, "sourceUrl": channel}}})
+        await conn.sendMessage(update.id, { text: texto })
 
-} else if (chat.detect && m.messageStubType == 30) {
-let txt2 = `🚩 *Un admin menos*\n\n`
-txt2 += `Nombre: @${m.messageStubParameters[0].split`@`[0]}\n`
-txt2 += `Le quitó admin: @${m.sender.split`@`[0]}`
+      } catch (e) {
+        console.log('Error _autodetec group:', e)
+      }
+    }
+  })
 
-await conn.sendMessage(m.chat, {text: txt2, mentions: [...txt2.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), contextInfo: { mentionedJid: [...txt2.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), "externalAdReply": {"showAdAttribution": true, "containsAutoReply": true, "renderLargerThumbnail": true, "title": 'HuTao-Proyect', "body": dev, "containsAutoReply": true, "mediaType": 1, "thumbnail": img, "mediaUrl": channel, "sourceUrl": channel}}})
-} else {
-/*if (m.messageStubType == 2) return
-console.log({messageStubType: m.messageStubType,
-messageStubParameters: m.messageStubParameters,
-type: WAMessageStubType[m.messageStubType], 
-})*/
-}}
-export default handler
+  // ───── ADMIN / QUITAR ADMIN
+  conn.ev.on('group-participants.update', async (anu) => {
+    try {
+      const chat = global.db.data.chats[anu.id]
+      if (!chat || !chat.detect) return
+
+      const user = anu.participants[0]
+      let texto = ''
+
+      if (anu.action === 'promote') {
+        texto = `🎄🎅 *NUEVO ADMIN* 🎅🎄
+
+👤 @${user.split('@')[0]}
+✨ Protege el espíritu navideño`
+      }
+
+      if (anu.action === 'demote') {
+        texto = `❄️🎄 *ADMIN REMOVIDO* 🎄❄️
+
+👤 @${user.split('@')[0]}
+🎅 Gracias por tu apoyo`
+      }
+
+      if (!texto) return
+
+      let pp = await conn.profilePictureUrl(user, 'image').catch(() => null)
+      let img = pp ? await (await fetch(pp)).buffer() : null
+
+      await conn.sendMessage(anu.id, {
+        text: texto,
+        mentions: [user],
+        contextInfo: img ? {
+          externalAdReply: {
+            showAdAttribution: true,
+            renderLargerThumbnail: true,
+            title: '🎄 ' + (global.packname || 'Bot'),
+            body: 'Espíritu Navideño Activado',
+            mediaType: 1,
+            thumbnail: img,
+            sourceUrl: global.channel || ''
+          }
+        } : {}
+      })
+
+    } catch (e) {
+      console.log('Error _autodetec admin:', e)
+    }
+  })
+}
