@@ -3,7 +3,7 @@ import yts from "yt-search";
 import axios from "axios";
 
 /* ===============================
-   FUNCIÓN AUDIO RÁPIDO (SEGURA)
+   AUDIO RÁPIDO SEGURO
 ================================ */
 async function getFastAudio(url) {
   const res = await fetch(
@@ -18,6 +18,11 @@ async function getFastAudio(url) {
 }
 
 /* ===============================
+   PEQUEÑO DELAY (ANTI RATE)
+================================ */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ===============================
    HANDLER
 ================================ */
 const handler = async (m, { conn, text, command }) => {
@@ -25,14 +30,14 @@ const handler = async (m, { conn, text, command }) => {
     if (!text) {
       return conn.reply(
         m.chat,
-        "🎅 Ho ho ho… dime qué canción quieres encontrar bajo el árbol 🎄",
+        "🎅 Dime qué canción quieres escuchar esta Navidad 🎄",
         m
       );
     }
 
     const search = await yts(text);
     if (!search.all.length) {
-      return m.reply("☃️ No encontré esa canción en el Polo Norte 🎶");
+      return m.reply("☃️ No encontré esa canción bajo el árbol 🎶");
     }
 
     const v = search.all.find(x => x.ago) || search.all[0];
@@ -58,7 +63,7 @@ const handler = async (m, { conn, text, command }) => {
       contextInfo: {
         externalAdReply: {
           title: "🎄 Christmas Music Player",
-          body: "⚡ Audio rápido y seguro",
+          body: "⚡ Audio rápido",
           mediaType: 1,
           mediaUrl: url,
           sourceUrl: url,
@@ -68,65 +73,49 @@ const handler = async (m, { conn, text, command }) => {
       }
     });
 
-    /* ===============================
-       AUDIO NORMAL RÁPIDO
-    ================================ */
-    if (['play', 'yta', 'mp3', 'ytmp3', 'playaudio'].includes(command)) {
+    // ⚡ SOLO UNA REACCIÓN (anti spam)
+    await conn.sendMessage(m.chat, {
+      react: { text: "⚡", key: m.key }
+    });
 
-      await conn.sendMessage(m.chat, {
-        react: { text: "⚡", key: m.key }
-      });
+    // ⏳ micro delay para WhatsApp
+    await sleep(1200);
 
-      let audioUrl;
+    let audioUrl;
 
-      try {
-        // 🚀 PRIMERO: API RÁPIDA
-        audioUrl = await getFastAudio(url);
-      } catch {
-        // 🛟 RESPALDO SEGURO
-        const slow = await axios.get(
-          `https://p.savenow.to/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}`
-        );
-        audioUrl = slow?.data?.download_url;
-      }
-
-      if (!audioUrl) {
-        return m.reply("❌ No pude envolver tu regalo musical 🎁");
-      }
-
-      await conn.sendMessage(m.chat, {
-        audio: { url: audioUrl },
-        mimetype: 'audio/mpeg',
-        ptt: false // ❌ NO nota de voz
-      }, { quoted: m });
-
-      await conn.sendMessage(m.chat, {
-        react: { text: "🎁", key: m.key }
-      });
+    try {
+      // 🚀 rápido
+      audioUrl = await getFastAudio(url);
+    } catch {
+      // 🛟 respaldo
+      const slow = await axios.get(
+        `https://p.savenow.to/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}`
+      );
+      audioUrl = slow?.data?.download_url;
     }
 
-    /* ===============================
-       AUDIO DOCUMENTO
-    ================================ */
-    else if (['play3','ytadoc','playdoc','ytmp3doc'].includes(command)) {
-      const audioUrl = await getFastAudio(url);
-
-      await conn.sendMessage(m.chat, {
-        document: { url: audioUrl },
-        mimetype: 'audio/mpeg',
-        fileName: `🎄 ${title}.mp3`
-      }, { quoted: m });
+    if (!audioUrl) {
+      return m.reply("❌ No pude preparar tu regalo musical 🎁");
     }
+
+    // 🎶 AUDIO NORMAL (NO PTT)
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioUrl },
+      mimetype: 'audio/mpeg',
+      ptt: false
+    }, { quoted: m });
 
   } catch (err) {
+    if (String(err).includes('rate-overlimit')) {
+      return m.reply("⏳ Estoy enviando muchos regalos, intenta en unos segundos 🎄");
+    }
     console.error(err);
     m.reply("❌ El duende se enredó con los cables 🎅");
   }
 };
 
 handler.command = handler.help = [
-  'play','mp3','yta','ytmp3','playaudio',
-  'play3','ytadoc','playdoc','ytmp3doc'
+  'play','mp3','yta','ytmp3','playaudio'
 ];
 
 handler.tags = ['downloader'];
