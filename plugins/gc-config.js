@@ -1,32 +1,29 @@
 let handler = async (m, { conn, args, command }) => {
 
-  let option = (args[0] || command || '').toLowerCase()
+  let opcion = (args[0] || '').toLowerCase()
+  let accion = {
+    'abrir': 'not_announcement',
+    'open': 'not_announcement',
+    'cerrar': 'announcement',
+    'close': 'announcement'
+  }[opcion]
 
-  let isClose = {
-    open: 'not_announcement',
-    abrir: 'not_announcement',
-    abierto: 'not_announcement',
+  if (!accion) return
 
-    close: 'announcement',
-    cerrar: 'announcement',
-    cerrado: 'announcement'
-  }[option]
+  // 🔒 Marca que fue por comando
+  global.db.data.chats[m.chat].detectCmd = true
+  global.db.data.chats[m.chat].detectTime = Date.now()
 
-  if (!isClose) return
+  await conn.groupSettingUpdate(m.chat, accion)
 
-  // 🔒 guardamos marca para autodetect
-  conn.groupDetectFromCommand ??= {}
-  conn.groupDetectFromCommand[m.chat] = true
-
-  await conn.groupSettingUpdate(m.chat, isClose)
-
-  // 👉 SOLO reacción
+  // 🔁 SOLO reacción
   await conn.sendMessage(m.chat, {
     react: {
-      text: isClose === 'announcement' ? '🔐' : '🔓',
+      text: accion === 'announcement' ? '🔐' : '🔓',
       key: m.key
     }
   })
+
 }
 
 handler.command = ['grupo', 'group', 'abrir', 'cerrar']
