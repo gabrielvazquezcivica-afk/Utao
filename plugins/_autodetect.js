@@ -1,11 +1,22 @@
 import fetch from 'node-fetch'
 
-const delay = ms => new Promise(res => setTimeout(res, ms))
+const delay = ms => new Promise(r => setTimeout(r, ms))
 
-let lastStub = {}
+// ⏱ registro de mensajes recientes del bot
+let lastBotMessage = {}
 
 export default function autodetecNavidad(conn) {
 
+  // 🧠 detectar cuando el BOT habla
+  conn.ev.on('messages.upsert', ({ messages }) => {
+    for (const m of messages) {
+      if (m.key.fromMe && m.key.remoteJid?.endsWith('@g.us')) {
+        lastBotMessage[m.key.remoteJid] = Date.now()
+      }
+    }
+  })
+
+  // 🎯 detectar cambios reales del grupo
   conn.ev.on('messages.upsert', async ({ messages }) => {
     for (const m of messages) {
       try {
@@ -16,17 +27,12 @@ export default function autodetecNavidad(conn) {
         const chat = global.db.data.chats[chatId]
         if (!chat || !chat.detect) continue
 
-        // ❌ ignorar acciones hechas por el bot
-        if (m.key.fromMe) continue
+        // 🛑 si el bot habló hace poco, NO enviar
+        const last = lastBotMessage[chatId] || 0
+        if (Date.now() - last < 5000) continue
 
-        // ❌ evitar duplicados
-        const key = `${chatId}_${m.messageStubType}_${m.messageStubParameters?.[0]}`
-        if (lastStub[key]) continue
-        lastStub[key] = true
-        setTimeout(() => delete lastStub[key], 5000)
-
-        // ⏳ delay anti rate-limit
-        await delay(1200)
+        // ⏳ delay extra de seguridad
+        await delay(2500)
 
         const santaImgUrl = global.navidadImg || 'https://i.imgur.com/9QO4K8K.png'
         const img = await (await fetch(santaImgUrl)).arrayBuffer()
