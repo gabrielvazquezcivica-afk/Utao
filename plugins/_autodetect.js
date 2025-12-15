@@ -1,66 +1,49 @@
+let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
 import fetch from 'node-fetch'
+import { readdirSync, unlinkSync, existsSync, promises as fs, rmSync } from 'fs'
+import path from 'path'
 
-export default function autodetecNavidad(conn) {
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-  conn.ev.on('messages.upsert', async ({ messages }) => {
-    for (const m of messages) {
-      try {
-        if (!m.messageStubType) continue
-        if (!m.key?.remoteJid?.endsWith('@g.us')) continue
+let handler = m => m
+handler.before = async function (m, { conn, participants, groupMetadata })
+{
 
-        const chatId = m.key.remoteJid
-        const chat = global.db.data.chats?.[chatId]
-        if (!chat || !chat.detect) continue
+if (!m.messageStubType || !m.isGroup) return
+let usuario = `@${m.sender.split`@`[0]}`
+const groupName = groupMetadata.subject
+const groupAdmins = participants.filter((p) => p.admin)
 
-        // 🔒 ABRIR / CERRAR GRUPO
-        if (m.messageStubType === 26) {
-          const cerrado = m.messageStubParameters?.[0] === 'on'
+let pp = await conn.profilePictureUrl(conn.user.jid).catch(_ => `${global.imagen1}`)
+const img = await (await fetch(pp)).buffer()
+const chat = global.db.data.chats[m.chat]
+const mentionsString = [m.sender, m.messageStubParameters[0], ...groupAdmins.map((v) => v.id)]
+const mentionsContentM = [m.sender, m.messageStubParameters[0]]
 
-          // ❌ si el bot hizo el cambio, WhatsApp no permite banner
-          if (m.key.fromMe) {
-            console.log('[AUTODETECT] Cambio hecho por el bot, sin banner')
-            return
-          }
+if (chat.detect && m.messageStubType == 25) {
+await this.sendMessage(m.chat, { text: `🚩 *Ahora ${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden editar la información del grupo*`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})
 
-          const texto = cerrado
-            ? `🎄🔒 *¡HO HO HO!* 🔒🎄
+acción } else if (chat.detect && m.messageStubType == 26) {  
+await this.sendMessage(m.chat, { text: `🚩 *El grupo ha sido ${m.messageStubParameters[0] == 'on' ? 'cerrado' : 'abierto'}*\n\n${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'} pueden enviar mensajes`, mentions: [m.sender] }, { quoted: fkontak, ephemeralExpiration: 24*60*100, disappearingMessagesInChat: 24*60*100})  
 
-Santa ha cerrado el grupo ❄️
-🎅 Solo administradores pueden escribir`
-            : `🎄🔓 *¡FELIZ NAVIDAD!* 🔓🎄
+} else if (chat.detect && m.messageStubType == 29) {
+let txt1 = `🚩 *Nuevo admin*\n\n`
+txt1 += `Nombre: @${m.messageStubParameters[0].split`@`[0]}\n`
+txt1 += `Le otorgó admin: @${m.sender.split`@`[0]}`
 
-Santa ha abierto el grupo 🎁
-✨ Todos pueden enviar mensajes`
+await conn.sendMessage(m.chat, {text: txt1, mentions: [...txt1.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), contextInfo: { mentionedJid: [...txt1.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), "externalAdReply": {"showAdAttribution": true, "containsAutoReply": true, "renderLargerThumbnail": true, "title": global.packname, "body": dev, "containsAutoReply": true, "mediaType": 1, "thumbnail": img, "mediaUrl": channel, "sourceUrl": channel}}})
 
-          // 🎅 imagen del banner
-          const santaImg =
-            global.navidadImg || 'https://i.imgur.com/9QO4K8K.png'
+} else if (chat.detect && m.messageStubType == 30) {
+let txt2 = `🚩 *Un admin menos*\n\n`
+txt2 += `Nombre: @${m.messageStubParameters[0].split`@`[0]}\n`
+txt2 += `Le quitó admin: @${m.sender.split`@`[0]}`
 
-          const img = await (await fetch(santaImg))
-            .arrayBuffer()
-            .then(b => Buffer.from(b))
-
-          await conn.sendMessage(chatId, {
-            text: texto,
-            contextInfo: {
-              externalAdReply: {
-                showAdAttribution: true,
-                renderLargerThumbnail: true,
-                title: 'WhatsApp • Estado',
-                body: cerrado
-                  ? 'El grupo ha sido cerrado'
-                  : 'El grupo ha sido abierto',
-                mediaType: 1,
-                thumbnail: img,
-                sourceUrl: global.channel || ''
-              }
-            }
-          })
-        }
-
-      } catch (e) {
-        console.log('Error autodetect stub:', e?.message || e)
-      }
-    }
-  })
-}
+await conn.sendMessage(m.chat, {text: txt2, mentions: [...txt2.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), contextInfo: { mentionedJid: [...txt2.matchAll(/@([0-9]{5,16}|0)/g)].map((v) => v[1] + '@s.whatsapp.net'), "externalAdReply": {"showAdAttribution": true, "containsAutoReply": true, "renderLargerThumbnail": true, "title": 'HuTao-Proyect', "body": dev, "containsAutoReply": true, "mediaType": 1, "thumbnail": img, "mediaUrl": channel, "sourceUrl": channel}}})
+} else {
+/*if (m.messageStubType == 2) return
+console.log({messageStubType: m.messageStubType,
+messageStubParameters: m.messageStubParameters,
+type: WAMessageStubType[m.messageStubType], 
+})*/
+}}
+export default handler
