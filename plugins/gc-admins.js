@@ -2,16 +2,16 @@ let handler = async (m, { conn, args, isAdmin }) => {
 
     // Verificar grupo
     if (!m.isGroup)
-        return conn.reply(m.chat, '❌ Este comando solo funciona en grupos', m)
+        return conn.reply(m.chat, '🎄❌ *Este comando solo funciona en grupos* ❄️', m)
 
     // Solo admins pueden usarlo
     if (!isAdmin)
-        return conn.reply(m.chat, '🚫 Solo los administradores pueden usar este comando', m)
+        return conn.reply(m.chat, '⛔🎅 *Solo los administradores pueden usar este comando* ❄️', m)
 
     // Reacción al mensaje del ejecutor
     await conn.sendMessage(m.chat, {
         react: {
-            text: '📢',
+            text: '🌟',
             key: m.key
         }
     })
@@ -27,14 +27,14 @@ let handler = async (m, { conn, args, isAdmin }) => {
         .map(p => p.id)
 
     if (!admins.length)
-        return conn.reply(m.chat, '❌ No hay administradores en este grupo', m)
+        return conn.reply(m.chat, '❄️🎅 *No hay administradores en este grupo* 🎄', m)
 
     // Mensaje del usuario
-    const textUser = args.join(' ') || 'Se requiere su atención ⚠️'
+    const textUser = args.join(' ') || '🎁 Se requiere su atención 🎄'
 
     // Lista numerada de admins
     let adminList = admins.map((a, i) => 
-        `${i + 1}. @${a.split('@')[0]}`
+        `🎅 ${i + 1}. @${a.split('@')[0]}`
     ).join('\n')
 
     // Foto del grupo
@@ -47,14 +47,16 @@ let handler = async (m, { conn, args, isAdmin }) => {
 
     // Texto final
     const caption = `
-📢 *LLAMADO A ADMINS*
-👥 *Grupo:* ${groupName}
+🎄✨ *LLAMADO NAVIDEÑO A ADMINS* ✨🎄
+❄️👥 *Grupo:* ${groupName}
 
-💬 *Mensaje:*
+🎁💬 *Mensaje Festivo:*
 ${textUser}
 
-👑 *Administradores:*
+👑🎅 *Administradores del Polo Norte:*
 ${adminList}
+
+❄️✨ ¡Felices Fiestas! ✨❄️
 `.trim()
 
     // Enviar mensaje
