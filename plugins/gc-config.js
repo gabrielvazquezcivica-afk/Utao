@@ -13,7 +13,7 @@ let handler = async (m, { conn, args, command }) => {
 
   await conn.sendMessage(m.chat, {
     react: {
-      text: isClose === 'announcement' ? '🔐🎄' : '🔓🎄',
+      text: isClose === 'announcement' ? '🔒🎄' : '🔓🎄',
       key: m.key
     }
   })
