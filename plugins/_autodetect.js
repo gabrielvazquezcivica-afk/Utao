@@ -13,7 +13,7 @@ const fkontak = async () => ({
   },
   message: {
     locationMessage: {
-      name: "🎄 Sasuke Bot MD ❄️",
+      name: "🎄 HUTAO BOT ❄️",
       jpegThumbnail: await (await fetch('https://files.catbox.moe/1j784p.jpg')).buffer()
     }
   },
