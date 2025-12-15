@@ -1,32 +1,29 @@
 let handler = async (m, { conn, args, command }) => {
 
-  let opcion = (args[0] || '').toLowerCase()
-  let accion = {
-    'abrir': 'not_announcement',
-    'open': 'not_announcement',
-    'cerrar': 'announcement',
-    'close': 'announcement'
-  }[opcion]
+  let action = (args[0] || '').toLowerCase()
 
-  if (!accion) return
+  let map = {
+    open: 'not_announcement',
+    abrir: 'not_announcement',
+    close: 'announcement',
+    cerrar: 'announcement'
+  }
 
-  // 🔒 Marca que fue por comando
-  global.db.data.chats[m.chat].detectCmd = true
-  global.db.data.chats[m.chat].detectTime = Date.now()
+  let isClose = map[action]
+  if (!isClose) return
 
-  await conn.groupSettingUpdate(m.chat, accion)
+  // 🧠 MARCAR QUE VIENE DE COMANDO
+  global.groupCommandDetect ??= {}
+  global.groupCommandDetect[m.chat] = Date.now()
 
-  // 🔁 SOLO reacción
-  await conn.sendMessage(m.chat, {
-    react: {
-      text: accion === 'announcement' ? '🔐' : '🔓',
-      key: m.key
-    }
-  })
+  await conn.groupSettingUpdate(m.chat, isClose)
+
+  // 🔐 SOLO REACCIÓN
+  let emoji = isClose === 'announcement' ? '🔐' : '🔓'
+  await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
 
 }
-
-handler.command = ['grupo', 'group', 'abrir', 'cerrar']
 handler.admin = true
 handler.botAdmin = true
+handler.command = ['grupo', 'group', 'cerrar', 'abrir']
 export default handler
