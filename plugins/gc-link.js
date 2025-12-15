@@ -1,4 +1,9 @@
-var handler = async (m, { conn, args }) => {
+var handler = async (m, { conn, args, isAdmin }) => {
+
+if (!isAdmin)
+  return m.reply(
+    '🎅❌ *Ho ho ho…* Solo los **admins del Polo Norte** pueden repartir el link mágico del grupo 🎄✨'
+  )
 
 let group = m.chat
 let link = 'https://chat.whatsapp.com/' + await conn.groupInviteCode(group)
@@ -20,5 +25,6 @@ handler.command = ['link','linkgroup']
 
 handler.group = true
 handler.botAdmin = true
+handler.admin = true
 
 export default handler
