@@ -3,7 +3,7 @@ var handler = async (m, { conn, participants }) => {
     let target = m.mentionedJid?.[0] || m.quoted?.sender;
     if (!target)
         return conn.reply(m.chat,
-            '🚩 *Debes mencionar o responder al mensaje del usuario que deseas expulsar.*',
+            '🎄🚩 *Ho ho ho~ Debes mencionar o responder al usuario que Santa va a sacar del grupo.*',
             m
         );
 
@@ -21,32 +21,34 @@ var handler = async (m, { conn, participants }) => {
 
     // Protecciones
     if (target === conn.user.jid)
-        return conn.reply(m.chat, '🚩 *No puedo expulsarme a mí mismo.*', m);
+        return conn.reply(m.chat, '🎅🚩 *No puedo regalarme carbón a mí mismo.*', m);
 
     if (target === ownerGroup)
-        return conn.reply(m.chat, '🚩 *No puedes expulsar al creador del grupo.*', m);
+        return conn.reply(m.chat, '🎄🚩 *No puedes expulsar al creador del grupo, Santa lo protege.*', m);
 
     if (target === ownerBot)
-        return conn.reply(m.chat, '🚩 *No puedes expulsar al propietario del bot.*', m);
+        return conn.reply(m.chat, '🎁🚩 *No puedes expulsar al dueño del bot, está en la lista buena.*', m);
 
     if (admins.includes(target))
-        return conn.reply(m.chat, '🚩 *No puedes expulsar a un administrador del grupo.*', m);
+        return conn.reply(m.chat, '❄️🚩 *No puedes expulsar a un admin, es un elfo del grupo.*', m);
 
     // Expulsar
     try {
         await conn.groupParticipantsUpdate(m.chat, [target], 'remove');
 
         await conn.sendMessage(m.chat, {
-            text: `🚫 *Usuario expulsado del grupo*
+            text: `🎄🚫 *Expulsión Navideña*
 
-👤 *Expulsado:* @${target.split('@')[0]}
-🛠️ *Acción realizada por:* @${executor.split('@')[0]}`,
+🎅 *Usuario enviado al Polo Norte:* @${target.split('@')[0]}
+🛠️ *Acción realizada por:* @${executor.split('@')[0]}
+
+🎁 *Felices fiestas~*`,
             mentions: [target, executor]
         });
 
     } catch (e) {
         console.error(e);
-        conn.reply(m.chat, '❌ *Ocurrió un error al intentar expulsar al usuario.*', m);
+        conn.reply(m.chat, '❌🎄 *Hubo un error y Santa no pudo completar la expulsión.*', m);
     }
 };
 
