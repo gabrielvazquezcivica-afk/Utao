@@ -19,9 +19,13 @@ if (chat.antiLink && isGroupLink) {
         if (m.text.includes(linkThisGroup)) return !0
     }
 
-    await conn.reply(m.chat, `『✦』Se detectó un *enlace de grupo/canal*.\nMensaje eliminado de: ${toUser}`, {
-        mentions: [m.sender]
-    })
+    await conn.reply(
+        m.chat,
+        `🎄✨ *Ho ho ho~* ✨🎄\n\n❄️ Se detectó un *enlace navideño prohibido* (grupo o canal).\n🧑‍🎄 Mensaje eliminado de: ${toUser}\n\n🎁 *Recuerda compartir solo buena vibra esta Navidad*`,
+        {
+            mentions: [m.sender]
+        }
+    )
 
     if (isBotAdmin) {
         await conn.sendMessage(m.chat, { 
