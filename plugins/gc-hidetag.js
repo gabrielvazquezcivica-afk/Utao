@@ -3,79 +3,70 @@ import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 var handler = async (m, { conn, text, participants }) => {
 
 let users = participants.map(u => conn.decodeJid(u.id))
+let footer = '' // déjalo vacío si no quieres nada extra
 
-// Detectar media en el mismo mensaje o citado
-let quoted = m.quoted || m
-let mime = (quoted.msg || quoted).mimetype || ''
-let isMedia = /image|video|audio|sticker/.test(mime)
-
-// ❌ Si no hay texto ni media
-if (!text && !isMedia) {
+// ❌ Si no manda texto ni responde a algo
+if (!text && !m.quoted) {
 return conn.reply(
 m.chat,
-'✏️ Debes escribir un texto',
+'✏️ Debes escribir un texto o responder a un mensaje',
 m
 )
 }
 
-try {
+// ================= SI ESTÁ RESPONDIENDO
+if (m.quoted) {
+const q = m.quoted
+const mime = q.mtype
 
-// ================= STICKER
-if (quoted.mtype === 'stickerMessage') {
-let media = await quoted.download()
-return conn.sendMessage(
-m.chat,
-{
-sticker: media,
-contextInfo: { mentionedJid: users }
-},
-{ quoted: m }
-)
+let msg = {}
+
+switch (mime) {
+
+case 'audioMessage':
+msg = {
+audio: await q.download(),
+ptt: q.ptt || false,
+mimetype: 'audio/mp4',
+mentions: users
+}
+break
+
+case 'imageMessage':
+msg = {
+image: await q.download(),
+caption: (q.text || text || '') + footer,
+mentions: users
+}
+break
+
+case 'videoMessage':
+msg = {
+video: await q.download(),
+caption: (q.text || text || '') + footer,
+mentions: users
+}
+break
+
+case 'stickerMessage':
+msg = {
+sticker: await q.download(),
+mentions: users
+}
+break
+
+default:
+msg = {
+text: (q.text || text || '') + footer,
+mentions: users
+}
+break
 }
 
-// ================= IMAGEN
-if (/image/.test(mime)) {
-let media = await quoted.download()
-return conn.sendMessage(
-m.chat,
-{
-image: media,
-caption: text || '',
-contextInfo: { mentionedJid: users }
-},
-{ quoted: m }
-)
+return conn.sendMessage(m.chat, msg, { quoted: m })
 }
 
-// ================= VIDEO
-if (/video/.test(mime)) {
-let media = await quoted.download()
-return conn.sendMessage(
-m.chat,
-{
-video: media,
-caption: text || '',
-contextInfo: { mentionedJid: users }
-},
-{ quoted: m }
-)
-}
-
-// ================= AUDIO
-if (/audio/.test(mime)) {
-let media = await quoted.download()
-return conn.sendMessage(
-m.chat,
-{
-audio: media,
-mimetype: mime,
-contextInfo: { mentionedJid: users }
-},
-{ quoted: m }
-)
-}
-
-// ================= SOLO TEXTO
+// ================= SOLO TEXTO (SIN QUOTED)
 let msg = generateWAMessageFromContent(
 m.chat,
 {
@@ -95,9 +86,6 @@ msg.message,
 { messageId: msg.key.id }
 )
 
-} catch (e) {
-console.error(e)
-}
 }
 
 handler.help = ['n']
