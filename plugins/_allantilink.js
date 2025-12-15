@@ -26,8 +26,15 @@ const isAntiLinkIg = isLinkIg.exec(m.text)
 const isAntiLinkTw = isLinkTw.exec(m.text)
 
 async function warnAndDelete(type) {
-    await conn.reply(m.chat, `『✦』Se detectó un enlace de *${type}*.\nMensaje eliminado de: *@${toUser}*`, null, { mentions: [aa] })
-    await conn.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }})
+    await conn.reply(
+        m.chat,
+        `🎄✨ *Ho ho ho~* ✨🎄\n\n❄️ Se detectó un enlace navideño de *${type}*.\n🧑‍🎄 Mensaje eliminado de: *@${toUser}*\n\n🎁 *Comparte solo alegría esta Navidad*`,
+        null,
+        { mentions: [aa] }
+    )
+    await conn.sendMessage(m.chat, { 
+        delete: { remoteJid: m.chat, fromMe: false, id: bang, participant: delet }
+    })
 }
 
 if (chat.antiTiktok && isAntiLinkTik) await warnAndDelete("TikTok")
