@@ -8,16 +8,16 @@ const formatVideo = ['360', '480', '720', '1080', '1440', '4k'];
 const ddownr = {
   download: async (url, format) => {
     if (!formatAudio.includes(format) && !formatVideo.includes(format)) {
-      throw new Error("Formato no soportado.");
+      throw new Error("🎄 Formato no compatible con el trineo.");
     }
 
     const res = await axios.get(
       `https://p.savenow.to/ajax/download.php?format=${format}&url=${encodeURIComponent(url)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`
     );
 
-    if (!res.data?.success) throw new Error("Error al procesar.");
+    if (!res.data?.success) throw new Error("❄️ Santa tuvo un problema procesando el regalo.");
 
-    const { id, info } = res.data;
+    const { id } = res.data;
     const downloadUrl = await ddownr.cekProgress(id);
 
     return { downloadUrl };
@@ -36,10 +36,16 @@ const ddownr = {
 
 const handler = async (m, { conn, text, command }) => {
   try {
-    if (!text) return conn.reply(m.chat, "⚠ Escribe el nombre de la canción.", m);
+    if (!text)
+      return conn.reply(
+        m.chat,
+        "🎅 Ho ho ho… dime qué canción quieres encontrar bajo el árbol 🎄",
+        m
+      );
 
     const search = await yts(text);
-    if (!search.all.length) return m.reply("Sin resultados.");
+    if (!search.all.length)
+      return m.reply("☃️ No encontré esa canción en el Polo Norte 🎶");
 
     const v = search.all.find(x => x.ago) || search.all[0];
     const { title, thumbnail, timestamp, views, ago, url } = v;
@@ -48,33 +54,40 @@ const handler = async (m, { conn, text, command }) => {
     const vistaTexto = formatViews(views);
 
     const mensaje = `
-┌─〔 ⚡ ${global.botname || conn.user?.name || 'CYBER-BOT'} ⚡ 〕─┐
-│ 🎶 𝗧𝗥𝗔𝗖𝗞
-│ ${title}
-│
-│ ⏱ 𝗗𝗨𝗥𝗔𝗖𝗜𝗢𝗡
-│ ${timestamp}
-│
-│ 👁 𝗩𝗜𝗦𝗧𝗔𝗦
-│ ${vistaTexto}
-│
-│ 📡 𝗖𝗔𝗡𝗔𝗟
-│ ${v.author.name || 'Desconocido'}
-│
-│ 🕒 𝗣𝗨𝗕𝗟𝗜𝗖𝗔𝗗𝗢
-│ ${ago}
-│
-│ 🔗 𝗬𝗢𝗨𝗧𝗨𝗕𝗘
-│ ${url}
-└────────────────────┘
-⏳ 𝗖𝗔𝗥𝗚𝗔𝗡𝗗𝗢 𝗔𝗨𝗗𝗜𝗢…
+🎄✨━━━━━━━━━━━━━━━━━━━━✨🎄
+🎅  ${global.botname || conn.user?.name || 'CYBER-BOT'}
+🎁 Música navideña recién salida del trineo
+━━━━━━━━━━━━━━━━━━━━━━━
+
+🎶 *CANCIÓN*
+🎁 ${title}
+
+⏱ *DURACIÓN*
+🕯 ${timestamp}
+
+👁 *OYENTES FELICES*
+⭐ ${vistaTexto}
+
+📡 *CANAL*
+🎤 ${v.author.name || 'Desconocido'}
+
+🕒 *PUBLICADA*
+🗓 ${ago}
+
+🔗 *YOUTUBE*
+🎥 ${url}
+
+━━━━━━━━━━━━━━━━━━━━━━━
+🎄 Preparando tu regalo musical…
+🎶 Que suene la Navidad ✨
+⛄━━━━━━━━━━━━━━━━━━━━⛄
 `;
 
     await conn.reply(m.chat, mensaje, m, {
       contextInfo: {
         externalAdReply: {
-          title: global.botname || "CYBER PLAYER",
-          body: "Fast Audio",
+          title: `🎄 ${global.botname || "CYBER PLAYER"} 🎄`,
+          body: "🎶 Villancicos y más",
           mediaType: 1,
           mediaUrl: url,
           sourceUrl: url,
@@ -84,12 +97,11 @@ const handler = async (m, { conn, text, command }) => {
       }
     });
 
-    // ▶ AUDIO NORMAL OPTIMIZADO + REACCIONES
+    // ▶ AUDIO NORMAL
     if (['play', 'yta', 'mp3', 'ytmp3', 'playaudio'].includes(command)) {
 
-      // ⏳ Reacción cargando
       await conn.sendMessage(m.chat, {
-        react: { text: "⏳", key: m.key }
+        react: { text: "🎄", key: m.key }
       });
 
       try {
@@ -98,16 +110,11 @@ const handler = async (m, { conn, text, command }) => {
         await conn.sendMessage(m.chat, {
           audio: { url: api.downloadUrl },
           mimetype: 'audio/mpeg',
-          ptt: false,
-          contextInfo: {
-            forwardingScore: 999,
-            isForwarded: false
-          }
+          ptt: false
         }, { quoted: m });
 
-        // ⚡ Reacción listo
         await conn.sendMessage(m.chat, {
-          react: { text: "⚡", key: m.key }
+          react: { text: "🎁", key: m.key }
         });
 
       } catch {
@@ -122,7 +129,7 @@ const handler = async (m, { conn, text, command }) => {
         }, { quoted: m });
 
         await conn.sendMessage(m.chat, {
-          react: { text: "⚡", key: m.key }
+          react: { text: "🎁", key: m.key }
         });
       }
     }
@@ -133,13 +140,13 @@ const handler = async (m, { conn, text, command }) => {
       await conn.sendMessage(m.chat, {
         document: { url: api.downloadUrl },
         mimetype: 'audio/mpeg',
-        fileName: `${title}.mp3`
+        fileName: `🎄🎶 ${title} - Navidad.mp3`
       }, { quoted: m });
     }
 
   } catch (e) {
     console.error(e);
-    m.reply("❌ Error inesperado.");
+    m.reply("❌ Algo salió mal en el taller de Santa 🎅");
   }
 };
 
