@@ -1,28 +1,26 @@
 let handler = async (m, { conn, args, command }) => {
 
-  let option = (args[0] || '').toLowerCase()
+  let option = (args[0] || command || '').toLowerCase()
 
   let isClose = {
-    'open': 'not_announcement',
-    'abrir': 'not_announcement',
-    'abierto': 'not_announcement',
+    open: 'not_announcement',
+    abrir: 'not_announcement',
+    abierto: 'not_announcement',
 
-    'close': 'announcement',
-    'cerrar': 'announcement',
-    'cerrado': 'announcement'
+    close: 'announcement',
+    cerrar: 'announcement',
+    cerrado: 'announcement'
   }[option]
 
-  if (!isClose)
-    return conn.reply(
-      m.chat,
-      `*Elija una opción*\n\nEjemplo:\n○ !${command} abrir\n○ !${command} cerrar`,
-      m
-    )
+  if (!isClose) return
 
-  // ⚙️ Abrir / cerrar grupo
+  // 🔒 guardamos marca para autodetect
+  conn.groupDetectFromCommand ??= {}
+  conn.groupDetectFromCommand[m.chat] = true
+
   await conn.groupSettingUpdate(m.chat, isClose)
 
-  // 😀 SOLO REACCIÓN
+  // 👉 SOLO reacción
   await conn.sendMessage(m.chat, {
     react: {
       text: isClose === 'announcement' ? '🔐' : '🔓',
@@ -31,10 +29,7 @@ let handler = async (m, { conn, args, command }) => {
   })
 }
 
-handler.help = ['grupo abrir', 'grupo cerrar']
-handler.tags = ['grupo']
-handler.command = ['group', 'grupo']
+handler.command = ['grupo', 'group', 'abrir', 'cerrar']
 handler.admin = true
 handler.botAdmin = true
-
 export default handler
