@@ -1,30 +1,15 @@
 const handler = async (m, { conn }) => {
-  try {
-    if (!m.isGroup) return
+  if (!m.isGroup) return
 
-    let user = m.mentionedJid[0]
-      ? m.mentionedJid[0]
-      : m.quoted
-        ? m.quoted.sender
-        : null
+  let user = m.mentionedJid[0] || m.quoted?.sender
+  if (!user || user === m.sender) return
 
-    if (!user) return
-    if (user === m.sender) return
+  const metadata = await conn.groupMetadata(m.chat)
+  const isAdmin = metadata.participants.some(p => p.id === user && p.admin)
+  if (isAdmin) return
 
-    const metadata = await conn.groupMetadata(m.chat)
-    const isAdmin = metadata.participants
-      .some(p => p.id === user && p.admin)
-
-    if (isAdmin) return
-
-    await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
-
-    // 🎄 reacción navideña
-    await m.react('🎄')
-
-  } catch (e) {
-    console.log('PROMOTE ERROR:', e)
-  }
+  await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
+  await m.react('🎄')
 }
 
 handler.command = ['promote', 'daradmin']
