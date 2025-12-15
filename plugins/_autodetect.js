@@ -1,6 +1,7 @@
+import fetch from 'node-fetch'
+
 export default function autodetecNavidad(conn) {
 
-  // Detectar cambios del grupo (stub)
   conn.ev.on('messages.upsert', async ({ messages }) => {
     for (const m of messages) {
       try {
@@ -11,14 +12,13 @@ export default function autodetecNavidad(conn) {
         const chat = global.db.data.chats?.[chatId]
         if (!chat || !chat.detect) continue
 
-        // Abrir / cerrar grupo
+        // 🔒 ABRIR / CERRAR GRUPO
         if (m.messageStubType === 26) {
           const cerrado = m.messageStubParameters?.[0] === 'on'
 
-          // ⚠️ Si el bot hizo el cambio, WhatsApp NO permite mensaje
-          // solo log en consola
+          // ❌ si el bot hizo el cambio, WhatsApp no permite banner
           if (m.key.fromMe) {
-            console.log('[AUTODETECT] Cambio hecho por el bot:', cerrado ? 'cerrado' : 'abierto')
+            console.log('[AUTODETECT] Cambio hecho por el bot, sin banner')
             return
           }
 
@@ -32,7 +32,30 @@ Santa ha cerrado el grupo ❄️
 Santa ha abierto el grupo 🎁
 ✨ Todos pueden enviar mensajes`
 
-          await conn.sendMessage(chatId, { text: texto })
+          // 🎅 imagen del banner
+          const santaImg =
+            global.navidadImg || 'https://i.imgur.com/9QO4K8K.png'
+
+          const img = await (await fetch(santaImg))
+            .arrayBuffer()
+            .then(b => Buffer.from(b))
+
+          await conn.sendMessage(chatId, {
+            text: texto,
+            contextInfo: {
+              externalAdReply: {
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                title: 'WhatsApp • Estado',
+                body: cerrado
+                  ? 'El grupo ha sido cerrado'
+                  : 'El grupo ha sido abierto',
+                mediaType: 1,
+                thumbnail: img,
+                sourceUrl: global.channel || ''
+              }
+            }
+          })
         }
 
       } catch (e) {
