@@ -1,4 +1,8 @@
-const handler = async (m, { conn, participants }) => {
+const handler = async (m, { conn, participants, isAdmin }) => {
+
+  if (!isAdmin)
+    return m.reply('🎅❌ *Ho ho ho…* Solo los **admins del taller de Santa** pueden hacer la mención navideña 🎄✨')
+
   const emojis = [
     "🎄","🎅","🤶","🧑‍🎄","🎁","❄️","☃️","⛄","🌟","✨","💫","🕯️",
     "🔔","🎶","🍪","🥛","🍫","🍬","🍭","🧦","🛷","🦌","🦌","🎀",
