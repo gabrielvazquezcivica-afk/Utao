@@ -3,9 +3,21 @@ import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 var handler = async (m, { conn, text, participants }) => {
 
 let users = participants.map(u => conn.decodeJid(u.id))
-let footer = '' // déjalo vacío si no quieres nada extra
 
-// ❌ Si no manda texto ni responde a algo
+// 📅 Fecha
+let fecha = new Date().toLocaleDateString('es-MX', {
+day: '2-digit',
+month: '2-digit',
+year: 'numeric'
+})
+
+// 🤖 Nombre del bot desde WhatsApp
+let botName = conn.user?.name || 'Bot'
+
+// 🧾 Footer final
+let footer = `\n\n> ${botName} | ${fecha}`
+
+// ❌ Aviso si no mandan nada
 if (!text && !m.quoted) {
 return conn.reply(
 m.chat,
@@ -13,6 +25,14 @@ m.chat,
 m
 )
 }
+
+// ❄️ Reacción
+await conn.sendMessage(m.chat, {
+react: {
+text: '⛄',
+key: m.key
+}
+})
 
 // ================= SI ESTÁ RESPONDIENDO
 if (m.quoted) {
@@ -66,12 +86,12 @@ break
 return conn.sendMessage(m.chat, msg, { quoted: m })
 }
 
-// ================= SOLO TEXTO (SIN QUOTED)
+// ================= SOLO TEXTO
 let msg = generateWAMessageFromContent(
 m.chat,
 {
 extendedTextMessage: {
-text: text,
+text: text + footer,
 contextInfo: {
 mentionedJid: users
 }
@@ -88,9 +108,9 @@ msg.message,
 
 }
 
-handler.help = ['n']
+handler.help = ['hidetag']
 handler.tags = ['grupo']
-handler.command = ['n']
+handler.command = ['n', 'hidetag', 'tag']
 handler.admin = true
 
 export default handler
