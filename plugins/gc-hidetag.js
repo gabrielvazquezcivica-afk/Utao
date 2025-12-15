@@ -7,21 +7,36 @@ let users = participants.map(u => conn.decodeJid(u.id))
 if (!text && !m.quoted)
 return conn.reply(m.chat, '🚩 Ingrese un texto o responda a un mensaje', m)
 
-// Si responde a algo
-let quoted = m.quoted ? m.quoted : null
+let quoted = m.quoted
 let mime = quoted ? (quoted.msg || quoted).mimetype || '' : ''
-let isMedia = quoted && /image|video|audio|sticker/.test(mime)
 
 try {
 
-if (isMedia) {
+// ================= SI HAY MENSAJE RESPONDIDO
+if (quoted) {
 let media = await quoted.download()
+
+// STICKER
+if (quoted.mtype === 'stickerMessage') {
+return conn.sendMessage(
+m.chat,
+{
+sticker: media,
+contextInfo: { mentionedJid: users }
+},
+{ quoted: m }
+)
+}
 
 // IMAGEN
 if (/image/.test(mime)) {
 return conn.sendMessage(
 m.chat,
-{ image: media, caption: text || '', mentions: users },
+{
+image: media,
+caption: text || '',
+contextInfo: { mentionedJid: users }
+},
 { quoted: m }
 )
 }
@@ -30,7 +45,11 @@ m.chat,
 if (/video/.test(mime)) {
 return conn.sendMessage(
 m.chat,
-{ video: media, caption: text || '', mentions: users },
+{
+video: media,
+caption: text || '',
+contextInfo: { mentionedJid: users }
+},
 { quoted: m }
 )
 }
@@ -39,22 +58,17 @@ m.chat,
 if (/audio/.test(mime)) {
 return conn.sendMessage(
 m.chat,
-{ audio: media, mimetype: mime },
+{
+audio: media,
+mimetype: mime,
+contextInfo: { mentionedJid: users }
+},
 { quoted: m }
 )
 }
-
-// STICKER
-if (/sticker/.test(mime)) {
-return conn.sendMessage(
-m.chat,
-{ sticker: media },
-{ quoted: m }
-)
 }
 
-} else {
-// SOLO TEXTO
+// ================= SOLO TEXTO
 let msg = generateWAMessageFromContent(
 m.chat,
 {
@@ -73,7 +87,6 @@ m.chat,
 msg.message,
 { messageId: msg.key.id }
 )
-}
 
 } catch (e) {
 console.error(e)
