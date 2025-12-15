@@ -4,19 +4,6 @@ var handler = async (m, { conn, text, participants }) => {
 
 let users = participants.map(u => conn.decodeJid(u.id))
 
-// 📅 Fecha
-let fecha = new Date().toLocaleDateString('es-MX', {
-day: '2-digit',
-month: '2-digit',
-year: 'numeric'
-})
-
-// 🤖 Nombre del bot desde WhatsApp
-let botName = conn.user?.name || 'Bot'
-
-// 🧾 Footer final
-let footer = `\n\n> ${botName} | ${fecha}`
-
 // ❌ Aviso si no mandan nada
 if (!text && !m.quoted) {
 return conn.reply(
@@ -33,6 +20,35 @@ text: '⛄',
 key: m.key
 }
 })
+
+// ================= FECHA + EMOJI POR MES
+const meses = [
+  { nombre: 'enero', emojis: ['❄️','🌨️','🧣'] },
+  { nombre: 'febrero', emojis: ['❤️','🌹','❄️'] },
+  { nombre: 'marzo', emojis: ['🌸','☘️','🌤️'] },
+  { nombre: 'abril', emojis: ['🌼','🌦️','🐣'] },
+  { nombre: 'mayo', emojis: ['🌺','☀️','🌷'] },
+  { nombre: 'junio', emojis: ['🌞','😎','🏖️'] },
+  { nombre: 'julio', emojis: ['🔥','🌴','☀️'] },
+  { nombre: 'agosto', emojis: ['🌊','😎','🔥'] },
+  { nombre: 'septiembre', emojis: ['🍂','🌾','🍁'] },
+  { nombre: 'octubre', emojis: ['🎃','🍂','🕯️'] },
+  { nombre: 'noviembre', emojis: ['🍁','🌫️','☕'] },
+  { nombre: 'diciembre', emojis: ['❄️','🎄','🎁'] }
+]
+
+const now = new Date()
+const dia = now.getDate()
+const año = now.getFullYear()
+const mesIndex = now.getMonth()
+const mes = meses[mesIndex]
+const emojiMes = mes.emojis[Math.floor(Math.random() * mes.emojis.length)]
+
+// 🤖 Nombre del bot desde WhatsApp
+let botName = conn.user?.name || 'Bot'
+
+// 🧾 Footer
+let footer = `\n\n> ${botName} | ${dia} de ${mes.nombre} ${emojiMes} ${año}`
 
 // ================= SI ESTÁ RESPONDIENDO
 if (m.quoted) {
@@ -108,9 +124,9 @@ msg.message,
 
 }
 
-handler.help = ['hidetag']
+handler.help = ['n']
 handler.tags = ['grupo']
-handler.command = ['n', 'hidetag', 'tag']
+handler.command = ['n']
 handler.admin = true
 
 export default handler
