@@ -2,9 +2,6 @@ import fetch from "node-fetch";
 import yts from "yt-search";
 import axios from "axios";
 
-/* ===============================
-   UTILIDADES
-================================ */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function getFastAudio(url) {
@@ -12,76 +9,55 @@ async function getFastAudio(url) {
     `https://api.stellarwa.xyz/dl/ytmp3?url=${encodeURIComponent(url)}&key=proyectsV2`
   ).then(r => r.json());
 
-  if (!res?.data?.dl || typeof res.data.dl !== 'string') {
-    throw new Error('Fast API failed');
-  }
-
+  if (!res?.data?.dl) throw new Error();
   return res.data.dl;
 }
 
-async function getSafeAudio(url) {
-  const start = await axios.get(
+async function getQuickBackup(url, timeout = 15000) {
+  const start = Date.now();
+
+  const init = await axios.get(
     `https://p.savenow.to/ajax/download.php?format=mp3&url=${encodeURIComponent(url)}`
   );
 
-  if (!start.data?.success || !start.data?.id) {
-    throw new Error('SaveNow init failed');
-  }
+  if (!init.data?.id) throw new Error();
 
-  const id = start.data.id;
-
-  // ⏳ esperar progreso REAL
-  for (let i = 0; i < 20; i++) {
+  while (Date.now() - start < timeout) {
     const r = await axios.get(
-      `https://p.savenow.to/ajax/progress?id=${id}`
+      `https://p.savenow.to/ajax/progress?id=${init.data.id}`
     );
 
-    if (r.data?.success && r.data?.download_url) {
+    if (r.data?.download_url) {
       return r.data.download_url;
     }
 
     await sleep(2000);
   }
 
-  throw new Error('SaveNow timeout');
+  throw new Error('Timeout');
 }
 
-/* ===============================
-   HANDLER
-================================ */
 const handler = async (m, { conn, text, command }) => {
   try {
-    if (!text)
-      return m.reply("🎅 Dime qué canción quieres escuchar 🎄");
+    if (!text) return m.reply("🎄 Escribe una canción");
 
     const search = await yts(text);
-    if (!search.all.length)
-      return m.reply("☃️ No encontré esa canción");
+    if (!search.all.length) return m.reply("☃️ No encontrada");
 
     const v = search.all.find(x => x.ago) || search.all[0];
     const { title, thumbnail, timestamp, ago, url } = v;
-
     const thumb = (await conn.getFile(thumbnail)).data;
 
-    const mensaje = `
-🎄━━━━━━━━━━━━━━━━━━━━🎄
-🎅 ${global.botname || 'HUTAO-BOT'}
-🎶 Preparando tu música navideña
-━━━━━━━━━━━━━━━━━━━━━━
-
+    await conn.reply(m.chat, `
+🎄 ${global.botname || 'HUTAO-BOT'}
+🎶 Preparando tu música
 🎵 ${title}
 ⏱ ${timestamp}
-🗓 ${ago}
-
-🎁 Entregando tu regalo musical…
-⛄━━━━━━━━━━━━━━━━━━━━⛄
-`;
-
-    await conn.reply(m.chat, mensaje, m, {
+`, m, {
       contextInfo: {
         externalAdReply: {
           title: "🎄 Christmas Music Player",
-          body: "⚡ Audio rápido y estable",
+          body: "⚡ Audio rápido",
           mediaType: 1,
           mediaUrl: url,
           sourceUrl: url,
@@ -91,21 +67,18 @@ const handler = async (m, { conn, text, command }) => {
       }
     });
 
-    // una sola reacción
     await conn.sendMessage(m.chat, {
       react: { text: "⚡", key: m.key }
     });
 
-    await sleep(1200);
-
     let audioUrl;
 
     try {
-      // 🚀 rápido
+      // 🚀 INSTANTÁNEO
       audioUrl = await getFastAudio(url);
     } catch {
-      // 🛟 seguro
-      audioUrl = await getSafeAudio(url);
+      // ⏱ RESPALDO RÁPIDO (15s máx)
+      audioUrl = await getQuickBackup(url);
     }
 
     await conn.sendMessage(m.chat, {
@@ -114,14 +87,11 @@ const handler = async (m, { conn, text, command }) => {
       ptt: false
     }, { quoted: m });
 
-  } catch (e) {
-    console.error(e);
-    m.reply("❌ No pude preparar tu regalo musical 🎁");
+  } catch {
+    m.reply("⚠️ El audio está tardando mucho, intenta otra canción 🎄");
   }
 };
 
-handler.command = [
-  'play','mp3','yta','ytmp3','playaudio'
-];
+handler.command = ['play','mp3','yta','ytmp3','playaudio'];
 handler.tags = ['downloader'];
 export default handler;
