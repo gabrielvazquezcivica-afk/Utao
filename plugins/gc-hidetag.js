@@ -1,6 +1,13 @@
 import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 
-var handler = async (m, { conn, text, participants }) => {
+var handler = async (m, { conn, text, participants, isAdmin }) => {
+
+if (!isAdmin)
+return conn.reply(
+m.chat,
+'🎅❌ *Ho ho ho…* Solo los **admins del taller de Santa** pueden usar este anuncio navideño 🎄✨',
+m
+)
 
 let users = participants.map(u => conn.decodeJid(u.id))
 
@@ -8,7 +15,7 @@ let users = participants.map(u => conn.decodeJid(u.id))
 if (!text && !m.quoted) {
 return conn.reply(
 m.chat,
-'✏️ Debes escribir un texto o responder a un mensaje',
+'✏️🎄 *Debes escribir un texto o responder a un mensaje para el anuncio navideño.*',
 m
 )
 }
