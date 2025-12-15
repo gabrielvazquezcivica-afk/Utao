@@ -1,45 +1,43 @@
-// ───── detectar cambios del grupo (stub)
-conn.ev.on('messages.upsert', async ({ messages }) => {
-  for (const m of messages) {
-    try {
-      if (!m.messageStubType) continue
-      if (!m.key?.remoteJid?.endsWith('@g.us')) continue
+export default function autodetecNavidad(conn) {
 
-      const chatId = m.key.remoteJid
-      const chat = global.db.data.chats?.[chatId]
-      if (!chat || !chat.detect) continue
+  // Detectar cambios del grupo (stub)
+  conn.ev.on('messages.upsert', async ({ messages }) => {
+    for (const m of messages) {
+      try {
+        if (!m.messageStubType) continue
+        if (!m.key?.remoteJid?.endsWith('@g.us')) continue
 
-      // 🔒 ABRIR / CERRAR
-      if (m.messageStubType === 26) {
-        const cerrado = m.messageStubParameters?.[0] === 'on'
+        const chatId = m.key.remoteJid
+        const chat = global.db.data.chats?.[chatId]
+        if (!chat || !chat.detect) continue
 
-        // 🤖 SI EL BOT HIZO EL CAMBIO → SOLO REACCIÓN
-        if (m.key.fromMe) {
-          await conn.sendMessage(chatId, {
-            react: {
-              text: cerrado ? '🔒🎄' : '🔓🎄',
-              key: m.key
-            }
-          })
-          return
-        }
+        // Abrir / cerrar grupo
+        if (m.messageStubType === 26) {
+          const cerrado = m.messageStubParameters?.[0] === 'on'
 
-        // 🧍 SI FUE HUMANO → MENSAJE
-        const texto = cerrado
-          ? `🎄🔒 *¡HO HO HO!* 🔒🎄
+          // ⚠️ Si el bot hizo el cambio, WhatsApp NO permite mensaje
+          // solo log en consola
+          if (m.key.fromMe) {
+            console.log('[AUTODETECT] Cambio hecho por el bot:', cerrado ? 'cerrado' : 'abierto')
+            return
+          }
+
+          const texto = cerrado
+            ? `🎄🔒 *¡HO HO HO!* 🔒🎄
 
 Santa ha cerrado el grupo ❄️
 🎅 Solo administradores pueden escribir`
-          : `🎄🔓 *¡FELIZ NAVIDAD!* 🔓🎄
+            : `🎄🔓 *¡FELIZ NAVIDAD!* 🔓🎄
 
 Santa ha abierto el grupo 🎁
 ✨ Todos pueden enviar mensajes`
 
-        await conn.sendMessage(chatId, { text: texto })
-      }
+          await conn.sendMessage(chatId, { text: texto })
+        }
 
-    } catch (e) {
-      console.log('Error autodetect stub:', e?.message || e)
+      } catch (e) {
+        console.log('Error autodetect stub:', e?.message || e)
+      }
     }
-  }
-})
+  })
+}
