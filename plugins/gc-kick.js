@@ -1,4 +1,11 @@
-var handler = async (m, { conn, participants }) => {
+var handler = async (m, { conn, participants, isAdmin }) => {
+    if (!isAdmin)
+        return conn.reply(
+            m.chat,
+            '🎅❌ *Ho ho ho…* Solo los **admins del Polo Norte** pueden expulsar duendes del grupo 🎄✨',
+            m
+        );
+
     // Verificar mención o respuesta
     let target = m.mentionedJid?.[0] || m.quoted?.sender;
     if (!target)
